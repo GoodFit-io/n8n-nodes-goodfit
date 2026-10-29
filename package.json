@@ -1,6 +1,6 @@
 {
 	"name": "n8n-nodes-goodfit",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "n8n nodes for GoodFit: enrich companies and contacts, read your GoodFit dataset, and trigger workflows from GoodFit syncs",
 	"license": "MIT",
 	"homepage": "https://github.com/GoodFit-io/n8n-nodes-goodfit",
