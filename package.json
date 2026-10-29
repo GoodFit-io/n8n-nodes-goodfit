@@ -17,7 +17,7 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/GoodFit-io/n8n-nodes-goodfit.git"
+		"url": "git+https://github.com/GoodFit-io/n8n-nodes-goodfit.git"
 	},
 	"scripts": {
 		"build": "n8n-node build",
@@ -25,7 +25,6 @@
 		"dev": "n8n-node dev",
 		"lint": "n8n-node lint",
 		"lint:fix": "n8n-node lint --fix",
-		"release": "n8n-node release",
 		"prepublishOnly": "n8n-node prerelease",
 		"test": "vitest run",
 		"openapi:sync": "node scripts/sync-openapi.mjs",
@@ -51,12 +50,11 @@
 		]
 	},
 	"devDependencies": {
-		"@n8n/node-cli": "*",
+		"@n8n/node-cli": "0.54.5",
 		"ajv": "^8.20.0",
 		"ajv-formats": "^3.0.1",
 		"eslint": "9.39.4",
 		"prettier": "3.9.10",
-		"release-it": "21.1.0",
 		"typescript": "5.9.3",
 		"vitest": "^5.0.4"
 	},
