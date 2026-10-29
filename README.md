@@ -239,7 +239,9 @@ npm run openapi:sync    # pull the latest published documents into openapi/
 npm run openapi:check   # fail if any published document has changed (runs weekly in CI)
 ```
 
-Releases are published to npm from GitHub Actions with provenance. Run `npm run release` to tag a version.
+To release, merge a PR that bumps the version in `package.json` and `CHANGELOG.md`, then push a matching tag
+(e.g. `0.1.1`) on `main`. GitHub Actions stages it on npm with provenance, and a maintainer approves it with 2FA
+(`npm stage approve`, or on npmjs.com) to publish it.
 
 ## Resources
 

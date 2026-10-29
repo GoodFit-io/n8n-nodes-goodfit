@@ -1,5 +1,5 @@
-# n8n requires community nodes to be published from GitHub Actions with npm provenance.
-# Auth: npm Trusted Publishing for this repo and publish.yml, or an NPM_TOKEN secret as a fallback.
+# Stages each tagged version on npm with provenance via Trusted Publishing (stage only).
+# It goes public once a maintainer approves it with 2FA: `npm stage approve` or npmjs.com.
 name: Publish
 
 on:
@@ -28,15 +28,19 @@ jobs:
       - name: Check the tag matches package.json
         run: test "$GITHUB_REF_NAME" = "$(node -p 'require("./package.json").version')"
 
+      - name: Install an npm with staged publishing
+        run: npm install -g npm@11.21.1
+
       - name: Install dependencies
         run: npm ci
 
       - name: Test
         run: npm run typecheck && npm test
 
-      - name: Release
-        run: |
-          [ -n "$NPM_TOKEN" ] && npm config set //registry.npmjs.org/:_authToken "$NPM_TOKEN"
-          npm run release
+      - name: Lint and build
+        run: npm run lint && npm run build
+
+      - name: Stage the release
+        run: npm stage publish --provenance
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          RELEASE_MODE: 'true'
