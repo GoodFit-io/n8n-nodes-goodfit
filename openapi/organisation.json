@@ -53,23 +53,15 @@
 											"type": "object",
 											"properties": {
 												"contact": {
-													"anyOf": [
-														{
-															"type": "number"
-														},
-														{
-															"type": "null"
-														}
+													"type": [
+														"number",
+														"null"
 													]
 												},
 												"phoneNumber": {
-													"anyOf": [
-														{
-															"type": "number"
-														},
-														{
-															"type": "null"
-														}
+													"type": [
+														"number",
+														"null"
 													]
 												}
 											},
@@ -86,13 +78,9 @@
 													"type": "object",
 													"properties": {
 														"limit": {
-															"anyOf": [
-																{
-																	"type": "number"
-																},
-																{
-																	"type": "null"
-																}
+															"type": [
+																"number",
+																"null"
 															]
 														},
 														"usage": {
@@ -109,13 +97,9 @@
 													"type": "object",
 													"properties": {
 														"limit": {
-															"anyOf": [
-																{
-																	"type": "number"
-																},
-																{
-																	"type": "null"
-																}
+															"type": [
+																"number",
+																"null"
 															]
 														},
 														"usage": {
@@ -154,15 +138,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"UNAUTHENTICATED"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -183,15 +167,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"FORBIDDEN"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -220,15 +204,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"RATE_LIMITED"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -249,15 +233,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"INTERNAL_ERROR"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [

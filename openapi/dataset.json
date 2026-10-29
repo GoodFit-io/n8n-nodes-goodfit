@@ -51,6 +51,9 @@
 								"type": "object",
 								"properties": {
 									"filters": {
+										"type": "object",
+										"properties": {},
+										"additionalProperties": {},
 										"description": "Filter group over your dataset’s data points, in the same format as company search. List the data points first (dataset_list_company_fields, or GET /companies/fields)",
 										"examples": [
 											{
@@ -64,14 +67,11 @@
 													}
 												]
 											}
-										],
-										"type": "object",
-										"properties": {},
-										"additionalProperties": {}
+										]
 									},
 									"excludeDomains": {
-										"description": "Companies left out whatever the filters say",
 										"default": [],
+										"description": "Companies left out whatever the filters say",
 										"maxItems": 10000,
 										"type": "array",
 										"items": {
@@ -84,14 +84,13 @@
 										"default": null,
 										"anyOf": [
 											{
-												"description": "Caps the segment at a number of companies, keeping the first by orderBy",
 												"type": "object",
 												"properties": {
 													"max": {
-														"description": "At most this many companies are included",
 														"type": "integer",
 														"exclusiveMinimum": 0,
-														"maximum": 9007199254740991
+														"maximum": 9007199254740991,
+														"description": "At most this many companies are included"
 													},
 													"orderBy": {
 														"description": "fieldName of the data point that decides which companies stay",
@@ -108,7 +107,8 @@
 												},
 												"required": [
 													"max"
-												]
+												],
+												"description": "Caps the segment at a number of companies, keeping the first by orderBy"
 											},
 											{
 												"type": "null"
@@ -116,14 +116,14 @@
 										]
 									},
 									"name": {
-										"description": "Unique among your segments",
 										"type": "string",
 										"minLength": 1,
-										"maxLength": 255
+										"maxLength": 255,
+										"description": "Unique among your segments"
 									},
 									"isDynamic": {
-										"description": "Refresh after every dataset sync",
 										"default": false,
+										"description": "Refresh after every dataset sync",
 										"type": "boolean"
 									}
 								},
@@ -150,17 +150,16 @@
 												"id": {
 													"type": "string",
 													"format": "uuid",
-													"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$"
+													"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
 												},
 												"name": {
 													"type": "string"
 												},
 												"isDynamic": {
-													"description": "A dynamic segment refreshes after every dataset sync",
-													"type": "boolean"
+													"type": "boolean",
+													"description": "A dynamic segment refreshes after every dataset sync"
 												},
 												"status": {
-													"description": "NEW: companies never calculated. UPDATING: recalculating companies after a criteria change. REFRESHING: recalculating companies and searching for contacts. READY: up to date. FAILED: the last calculation or refresh failed; companies from the last good run stay listed",
 													"type": "string",
 													"enum": [
 														"NEW",
@@ -168,10 +167,10 @@
 														"REFRESHING",
 														"READY",
 														"FAILED"
-													]
+													],
+													"description": "NEW: companies never calculated. UPDATING: recalculating companies after a criteria change. REFRESHING: recalculating companies and searching for contacts. READY: up to date. FAILED: the last calculation or refresh failed; companies from the last good run stay listed"
 												},
 												"sizeCompanies": {
-													"description": "Companies in the segment. Null until first calculated",
 													"anyOf": [
 														{
 															"type": "integer",
@@ -181,7 +180,8 @@
 														{
 															"type": "null"
 														}
-													]
+													],
+													"description": "Companies in the segment. Null until first calculated"
 												},
 												"sizeContacts": {
 													"anyOf": [
@@ -196,13 +196,9 @@
 													]
 												},
 												"lastRefreshedAt": {
-													"anyOf": [
-														{
-															"type": "string"
-														},
-														{
-															"type": "null"
-														}
+													"type": [
+														"string",
+														"null"
 													]
 												},
 												"createdAt": {
@@ -221,14 +217,13 @@
 												"companyLimit": {
 													"anyOf": [
 														{
-															"description": "Caps the segment at a number of companies, keeping the first by orderBy",
 															"type": "object",
 															"properties": {
 																"max": {
-																	"description": "At most this many companies are included",
 																	"type": "integer",
 																	"exclusiveMinimum": 0,
-																	"maximum": 9007199254740991
+																	"maximum": 9007199254740991,
+																	"description": "At most this many companies are included"
 																},
 																"orderBy": {
 																	"description": "fieldName of the data point that decides which companies stay",
@@ -246,7 +241,8 @@
 															"required": [
 																"max"
 															],
-															"additionalProperties": false
+															"additionalProperties": false,
+															"description": "Caps the segment at a number of companies, keeping the first by orderBy"
 														},
 														{
 															"type": "null"
@@ -288,15 +284,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"INVALID_REQUEST"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -317,15 +313,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"UNAUTHENTICATED"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -346,15 +342,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"FORBIDDEN"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -375,15 +371,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"CONFLICT"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -412,15 +408,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"RATE_LIMITED"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -441,15 +437,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"INTERNAL_ERROR"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -485,8 +481,8 @@
 						"required": false,
 						"schema": {
 							"$schema": "https://json-schema.org/draft/2020-12/schema",
-							"description": "Rows per page, 1 to 1000",
 							"default": 100,
+							"description": "Rows per page, 1 to 1000",
 							"type": "integer",
 							"minimum": 1,
 							"maximum": 1000
@@ -498,9 +494,9 @@
 						"required": false,
 						"schema": {
 							"$schema": "https://json-schema.org/draft/2020-12/schema",
-							"description": "Opaque cursor from a previous response. Omit for the first page",
 							"type": "string",
-							"minLength": 1
+							"minLength": 1,
+							"description": "Opaque cursor from a previous response. Omit for the first page"
 						}
 					}
 				],
@@ -516,23 +512,21 @@
 										"segments": {
 											"type": "array",
 											"items": {
-												"description": "A segment without its criteria",
 												"type": "object",
 												"properties": {
 													"id": {
 														"type": "string",
 														"format": "uuid",
-														"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$"
+														"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
 													},
 													"name": {
 														"type": "string"
 													},
 													"isDynamic": {
-														"description": "A dynamic segment refreshes after every dataset sync",
-														"type": "boolean"
+														"type": "boolean",
+														"description": "A dynamic segment refreshes after every dataset sync"
 													},
 													"status": {
-														"description": "NEW: companies never calculated. UPDATING: recalculating companies after a criteria change. REFRESHING: recalculating companies and searching for contacts. READY: up to date. FAILED: the last calculation or refresh failed; companies from the last good run stay listed",
 														"type": "string",
 														"enum": [
 															"NEW",
@@ -540,10 +534,10 @@
 															"REFRESHING",
 															"READY",
 															"FAILED"
-														]
+														],
+														"description": "NEW: companies never calculated. UPDATING: recalculating companies after a criteria change. REFRESHING: recalculating companies and searching for contacts. READY: up to date. FAILED: the last calculation or refresh failed; companies from the last good run stay listed"
 													},
 													"sizeCompanies": {
-														"description": "Companies in the segment. Null until first calculated",
 														"anyOf": [
 															{
 																"type": "integer",
@@ -553,7 +547,8 @@
 															{
 																"type": "null"
 															}
-														]
+														],
+														"description": "Companies in the segment. Null until first calculated"
 													},
 													"sizeContacts": {
 														"anyOf": [
@@ -568,13 +563,9 @@
 														]
 													},
 													"lastRefreshedAt": {
-														"anyOf": [
-															{
-																"type": "string"
-															},
-															{
-																"type": "null"
-															}
+														"type": [
+															"string",
+															"null"
 														]
 													},
 													"createdAt": {
@@ -595,7 +586,8 @@
 													"createdAt",
 													"updatedAt"
 												],
-												"additionalProperties": false
+												"additionalProperties": false,
+												"description": "A segment without its criteria"
 											}
 										},
 										"totalSegments": {
@@ -605,13 +597,9 @@
 										},
 										"nextIterator": {
 											"description": "Pass as `iterator` to fetch the next page. Null on the last page",
-											"anyOf": [
-												{
-													"type": "string"
-												},
-												{
-													"type": "null"
-												}
+											"type": [
+												"string",
+												"null"
 											]
 										},
 										"hasMoreResults": {
@@ -638,15 +626,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"INVALID_REQUEST"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -667,15 +655,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"UNAUTHENTICATED"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -696,15 +684,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"FORBIDDEN"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -733,15 +721,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"RATE_LIMITED"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -762,15 +750,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"INTERNAL_ERROR"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -808,8 +796,8 @@
 						"required": true,
 						"schema": {
 							"$schema": "https://json-schema.org/draft/2020-12/schema",
-							"description": "The segment id",
-							"type": "string"
+							"type": "string",
+							"description": "The segment id"
 						}
 					}
 				],
@@ -826,15 +814,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"INVALID_REQUEST"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -855,15 +843,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"UNAUTHENTICATED"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -884,15 +872,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"FORBIDDEN"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -913,15 +901,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"NOT_FOUND"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -942,15 +930,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"CONFLICT"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -979,15 +967,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"RATE_LIMITED"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -1008,15 +996,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"INTERNAL_ERROR"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -1052,8 +1040,8 @@
 						"required": true,
 						"schema": {
 							"$schema": "https://json-schema.org/draft/2020-12/schema",
-							"description": "The segment id",
-							"type": "string"
+							"type": "string",
+							"description": "The segment id"
 						}
 					}
 				],
@@ -1072,17 +1060,16 @@
 												"id": {
 													"type": "string",
 													"format": "uuid",
-													"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$"
+													"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
 												},
 												"name": {
 													"type": "string"
 												},
 												"isDynamic": {
-													"description": "A dynamic segment refreshes after every dataset sync",
-													"type": "boolean"
+													"type": "boolean",
+													"description": "A dynamic segment refreshes after every dataset sync"
 												},
 												"status": {
-													"description": "NEW: companies never calculated. UPDATING: recalculating companies after a criteria change. REFRESHING: recalculating companies and searching for contacts. READY: up to date. FAILED: the last calculation or refresh failed; companies from the last good run stay listed",
 													"type": "string",
 													"enum": [
 														"NEW",
@@ -1090,10 +1077,10 @@
 														"REFRESHING",
 														"READY",
 														"FAILED"
-													]
+													],
+													"description": "NEW: companies never calculated. UPDATING: recalculating companies after a criteria change. REFRESHING: recalculating companies and searching for contacts. READY: up to date. FAILED: the last calculation or refresh failed; companies from the last good run stay listed"
 												},
 												"sizeCompanies": {
-													"description": "Companies in the segment. Null until first calculated",
 													"anyOf": [
 														{
 															"type": "integer",
@@ -1103,7 +1090,8 @@
 														{
 															"type": "null"
 														}
-													]
+													],
+													"description": "Companies in the segment. Null until first calculated"
 												},
 												"sizeContacts": {
 													"anyOf": [
@@ -1118,13 +1106,9 @@
 													]
 												},
 												"lastRefreshedAt": {
-													"anyOf": [
-														{
-															"type": "string"
-														},
-														{
-															"type": "null"
-														}
+													"type": [
+														"string",
+														"null"
 													]
 												},
 												"createdAt": {
@@ -1143,14 +1127,13 @@
 												"companyLimit": {
 													"anyOf": [
 														{
-															"description": "Caps the segment at a number of companies, keeping the first by orderBy",
 															"type": "object",
 															"properties": {
 																"max": {
-																	"description": "At most this many companies are included",
 																	"type": "integer",
 																	"exclusiveMinimum": 0,
-																	"maximum": 9007199254740991
+																	"maximum": 9007199254740991,
+																	"description": "At most this many companies are included"
 																},
 																"orderBy": {
 																	"description": "fieldName of the data point that decides which companies stay",
@@ -1168,7 +1151,8 @@
 															"required": [
 																"max"
 															],
-															"additionalProperties": false
+															"additionalProperties": false,
+															"description": "Caps the segment at a number of companies, keeping the first by orderBy"
 														},
 														{
 															"type": "null"
@@ -1210,15 +1194,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"INVALID_REQUEST"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -1239,15 +1223,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"UNAUTHENTICATED"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -1268,15 +1252,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"FORBIDDEN"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -1297,15 +1281,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"NOT_FOUND"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -1334,15 +1318,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"RATE_LIMITED"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -1363,15 +1347,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"INTERNAL_ERROR"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -1407,8 +1391,8 @@
 						"required": true,
 						"schema": {
 							"$schema": "https://json-schema.org/draft/2020-12/schema",
-							"description": "The segment id",
-							"type": "string"
+							"type": "string",
+							"description": "The segment id"
 						}
 					}
 				],
@@ -1430,6 +1414,9 @@
 										"type": "boolean"
 									},
 									"filters": {
+										"type": "object",
+										"properties": {},
+										"additionalProperties": {},
 										"description": "Filter group over your dataset’s data points, in the same format as company search. List the data points first (dataset_list_company_fields, or GET /companies/fields)",
 										"examples": [
 											{
@@ -1443,10 +1430,7 @@
 													}
 												]
 											}
-										],
-										"type": "object",
-										"properties": {},
-										"additionalProperties": {}
+										]
 									},
 									"excludeDomains": {
 										"maxItems": 10000,
@@ -1460,14 +1444,13 @@
 									"companyLimit": {
 										"anyOf": [
 											{
-												"description": "Caps the segment at a number of companies, keeping the first by orderBy",
 												"type": "object",
 												"properties": {
 													"max": {
-														"description": "At most this many companies are included",
 														"type": "integer",
 														"exclusiveMinimum": 0,
-														"maximum": 9007199254740991
+														"maximum": 9007199254740991,
+														"description": "At most this many companies are included"
 													},
 													"orderBy": {
 														"description": "fieldName of the data point that decides which companies stay",
@@ -1484,7 +1467,8 @@
 												},
 												"required": [
 													"max"
-												]
+												],
+												"description": "Caps the segment at a number of companies, keeping the first by orderBy"
 											},
 											{
 												"type": "null"
@@ -1511,17 +1495,16 @@
 												"id": {
 													"type": "string",
 													"format": "uuid",
-													"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$"
+													"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
 												},
 												"name": {
 													"type": "string"
 												},
 												"isDynamic": {
-													"description": "A dynamic segment refreshes after every dataset sync",
-													"type": "boolean"
+													"type": "boolean",
+													"description": "A dynamic segment refreshes after every dataset sync"
 												},
 												"status": {
-													"description": "NEW: companies never calculated. UPDATING: recalculating companies after a criteria change. REFRESHING: recalculating companies and searching for contacts. READY: up to date. FAILED: the last calculation or refresh failed; companies from the last good run stay listed",
 													"type": "string",
 													"enum": [
 														"NEW",
@@ -1529,10 +1512,10 @@
 														"REFRESHING",
 														"READY",
 														"FAILED"
-													]
+													],
+													"description": "NEW: companies never calculated. UPDATING: recalculating companies after a criteria change. REFRESHING: recalculating companies and searching for contacts. READY: up to date. FAILED: the last calculation or refresh failed; companies from the last good run stay listed"
 												},
 												"sizeCompanies": {
-													"description": "Companies in the segment. Null until first calculated",
 													"anyOf": [
 														{
 															"type": "integer",
@@ -1542,7 +1525,8 @@
 														{
 															"type": "null"
 														}
-													]
+													],
+													"description": "Companies in the segment. Null until first calculated"
 												},
 												"sizeContacts": {
 													"anyOf": [
@@ -1557,13 +1541,9 @@
 													]
 												},
 												"lastRefreshedAt": {
-													"anyOf": [
-														{
-															"type": "string"
-														},
-														{
-															"type": "null"
-														}
+													"type": [
+														"string",
+														"null"
 													]
 												},
 												"createdAt": {
@@ -1582,14 +1562,13 @@
 												"companyLimit": {
 													"anyOf": [
 														{
-															"description": "Caps the segment at a number of companies, keeping the first by orderBy",
 															"type": "object",
 															"properties": {
 																"max": {
-																	"description": "At most this many companies are included",
 																	"type": "integer",
 																	"exclusiveMinimum": 0,
-																	"maximum": 9007199254740991
+																	"maximum": 9007199254740991,
+																	"description": "At most this many companies are included"
 																},
 																"orderBy": {
 																	"description": "fieldName of the data point that decides which companies stay",
@@ -1607,7 +1586,8 @@
 															"required": [
 																"max"
 															],
-															"additionalProperties": false
+															"additionalProperties": false,
+															"description": "Caps the segment at a number of companies, keeping the first by orderBy"
 														},
 														{
 															"type": "null"
@@ -1649,15 +1629,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"INVALID_REQUEST"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -1678,15 +1658,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"UNAUTHENTICATED"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -1707,15 +1687,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"FORBIDDEN"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -1736,15 +1716,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"NOT_FOUND"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -1765,15 +1745,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"CONFLICT"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -1802,15 +1782,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"RATE_LIMITED"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -1831,15 +1811,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"INTERNAL_ERROR"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -1876,9 +1856,9 @@
 						"required": true,
 						"schema": {
 							"$schema": "https://json-schema.org/draft/2020-12/schema",
-							"description": "Primary domain, without scheme or path",
 							"type": "string",
-							"minLength": 1
+							"minLength": 1,
+							"description": "Primary domain, without scheme or path"
 						}
 					},
 					{
@@ -1954,15 +1934,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"INVALID_REQUEST"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -1983,15 +1963,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"UNAUTHENTICATED"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -2012,15 +1992,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"FORBIDDEN"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -2041,15 +2021,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"NOT_FOUND"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -2078,15 +2058,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"RATE_LIMITED"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -2107,15 +2087,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"INTERNAL_ERROR"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -2152,8 +2132,8 @@
 						"required": true,
 						"schema": {
 							"$schema": "https://json-schema.org/draft/2020-12/schema",
-							"description": "The id returned by POST /exports",
-							"type": "string"
+							"type": "string",
+							"description": "The id returned by POST /exports"
 						}
 					}
 				],
@@ -2172,7 +2152,7 @@
 												"id": {
 													"type": "string",
 													"format": "uuid",
-													"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$"
+													"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
 												},
 												"status": {
 													"type": "string",
@@ -2187,23 +2167,15 @@
 													"type": "string"
 												},
 												"exportName": {
-													"anyOf": [
-														{
-															"type": "string"
-														},
-														{
-															"type": "null"
-														}
+													"type": [
+														"string",
+														"null"
 													]
 												},
 												"requestedByUserEmail": {
-													"anyOf": [
-														{
-															"type": "string"
-														},
-														{
-															"type": "null"
-														}
+													"type": [
+														"string",
+														"null"
 													]
 												},
 												"exportConfig": {
@@ -2272,13 +2244,9 @@
 													]
 												},
 												"completedAt": {
-													"anyOf": [
-														{
-															"type": "string"
-														},
-														{
-															"type": "null"
-														}
+													"type": [
+														"string",
+														"null"
 													]
 												},
 												"createdAt": {
@@ -2288,8 +2256,8 @@
 													"type": "string"
 												},
 												"isExpired": {
-													"description": "Exports older than 30 days have had their files deleted",
-													"type": "boolean"
+													"type": "boolean",
+													"description": "Exports older than 30 days have had their files deleted"
 												}
 											},
 											"required": [
@@ -2325,15 +2293,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"INVALID_REQUEST"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -2354,15 +2322,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"UNAUTHENTICATED"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -2383,15 +2351,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"FORBIDDEN"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -2412,15 +2380,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"NOT_FOUND"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -2449,15 +2417,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"RATE_LIMITED"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -2478,15 +2446,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"INTERNAL_ERROR"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -2524,8 +2492,8 @@
 						"required": true,
 						"schema": {
 							"$schema": "https://json-schema.org/draft/2020-12/schema",
-							"description": "The id returned by POST /exports",
-							"type": "string"
+							"type": "string",
+							"description": "The id returned by POST /exports"
 						}
 					}
 				],
@@ -2544,7 +2512,7 @@
 												"id": {
 													"type": "string",
 													"format": "uuid",
-													"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$"
+													"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
 												},
 												"status": {
 													"type": "string",
@@ -2559,23 +2527,15 @@
 													"type": "string"
 												},
 												"exportName": {
-													"anyOf": [
-														{
-															"type": "string"
-														},
-														{
-															"type": "null"
-														}
+													"type": [
+														"string",
+														"null"
 													]
 												},
 												"requestedByUserEmail": {
-													"anyOf": [
-														{
-															"type": "string"
-														},
-														{
-															"type": "null"
-														}
+													"type": [
+														"string",
+														"null"
 													]
 												},
 												"exportConfig": {
@@ -2644,13 +2604,9 @@
 													]
 												},
 												"completedAt": {
-													"anyOf": [
-														{
-															"type": "string"
-														},
-														{
-															"type": "null"
-														}
+													"type": [
+														"string",
+														"null"
 													]
 												},
 												"createdAt": {
@@ -2660,8 +2616,8 @@
 													"type": "string"
 												},
 												"isExpired": {
-													"description": "Exports older than 30 days have had their files deleted",
-													"type": "boolean"
+													"type": "boolean",
+													"description": "Exports older than 30 days have had their files deleted"
 												}
 											},
 											"required": [
@@ -2688,9 +2644,9 @@
 														"type": "string"
 													},
 													"downloadUrl": {
-														"description": "Pre-signed S3 URL, valid for 5 minutes",
 														"type": "string",
-														"format": "uri"
+														"format": "uri",
+														"description": "Pre-signed S3 URL, valid for 5 minutes"
 													}
 												},
 												"required": [
@@ -2719,15 +2675,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"INVALID_REQUEST"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -2748,15 +2704,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"UNAUTHENTICATED"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -2777,15 +2733,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"FORBIDDEN"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -2806,15 +2762,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"NOT_FOUND"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -2843,15 +2799,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"RATE_LIMITED"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -2872,15 +2828,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"INTERNAL_ERROR"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -2917,8 +2873,8 @@
 						"required": false,
 						"schema": {
 							"$schema": "https://json-schema.org/draft/2020-12/schema",
-							"description": "Rows per page, 1 to 1000",
 							"default": 100,
+							"description": "Rows per page, 1 to 1000",
 							"type": "integer",
 							"minimum": 1,
 							"maximum": 1000
@@ -2930,9 +2886,9 @@
 						"required": false,
 						"schema": {
 							"$schema": "https://json-schema.org/draft/2020-12/schema",
-							"description": "Opaque cursor from a previous response. Omit for the first page",
 							"type": "string",
-							"minLength": 1
+							"minLength": 1,
+							"description": "Opaque cursor from a previous response. Omit for the first page"
 						}
 					},
 					{
@@ -2966,7 +2922,7 @@
 							"description": "Only companies currently in this segment",
 							"type": "string",
 							"format": "uuid",
-							"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$"
+							"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
 						}
 					},
 					{
@@ -3034,13 +2990,9 @@
 										},
 										"nextIterator": {
 											"description": "Pass as `iterator` to fetch the next page. Null on the last page",
-											"anyOf": [
-												{
-													"type": "string"
-												},
-												{
-													"type": "null"
-												}
+											"type": [
+												"string",
+												"null"
 											]
 										},
 										"hasMoreResults": {
@@ -3067,15 +3019,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"INVALID_REQUEST"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -3096,15 +3048,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"UNAUTHENTICATED"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -3125,15 +3077,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"FORBIDDEN"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -3154,15 +3106,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"NOT_FOUND"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -3191,15 +3143,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"RATE_LIMITED"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -3220,15 +3172,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"INTERNAL_ERROR"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -3273,12 +3225,12 @@
 												"type": "object",
 												"properties": {
 													"fieldName": {
-														"description": "Name to use in filters and in the response body",
-														"type": "string"
+														"type": "string",
+														"description": "Name to use in filters and in the response body"
 													},
 													"displayName": {
-														"description": "The name shown in the Goodfit app",
-														"type": "string"
+														"type": "string",
+														"description": "The name shown in the Goodfit app"
 													},
 													"fieldType": {
 														"type": "string",
@@ -3296,10 +3248,8 @@
 														]
 													},
 													"operators": {
-														"description": "Operators accepted for this data point in POST /companies/search",
 														"type": "array",
 														"items": {
-															"description": "Comparison applied to the data point",
 															"type": "string",
 															"enum": [
 																"exists",
@@ -3333,22 +3283,20 @@
 																"dateBetween",
 																"dateSinceRelative",
 																"dateBeforeRelative"
-															]
-														}
+															],
+															"description": "Comparison applied to the data point"
+														},
+														"description": "Operators accepted for this data point in POST /companies/search"
 													},
 													"description": {
-														"anyOf": [
-															{
-																"type": "string"
-															},
-															{
-																"type": "null"
-															}
+														"type": [
+															"string",
+															"null"
 														]
 													},
 													"isIntel": {
-														"description": "Whether this is intel: a data point answering a higher-level question, e.g. \"Sells to enterprises?\"",
-														"type": "boolean"
+														"type": "boolean",
+														"description": "Whether this is intel: a data point answering a higher-level question, e.g. \"Sells to enterprises?\""
 													}
 												},
 												"required": [
@@ -3380,15 +3328,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"UNAUTHENTICATED"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -3409,15 +3357,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"FORBIDDEN"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -3446,15 +3394,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"RATE_LIMITED"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -3475,15 +3423,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"INTERNAL_ERROR"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -3531,8 +3479,8 @@
 														"type": "string"
 													},
 													"displayName": {
-														"description": "The name shown in the Goodfit app",
-														"type": "string"
+														"type": "string",
+														"description": "The name shown in the Goodfit app"
 													},
 													"fieldType": {
 														"type": "string",
@@ -3550,13 +3498,9 @@
 														]
 													},
 													"description": {
-														"anyOf": [
-															{
-																"type": "string"
-															},
-															{
-																"type": "null"
-															}
+														"type": [
+															"string",
+															"null"
 														]
 													}
 												},
@@ -3587,15 +3531,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"UNAUTHENTICATED"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -3616,15 +3560,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"FORBIDDEN"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -3653,15 +3597,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"RATE_LIMITED"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -3682,15 +3626,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"INTERNAL_ERROR"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -3727,8 +3671,8 @@
 						"required": false,
 						"schema": {
 							"$schema": "https://json-schema.org/draft/2020-12/schema",
-							"description": "Rows per page, 1 to 1000",
 							"default": 100,
+							"description": "Rows per page, 1 to 1000",
 							"type": "integer",
 							"minimum": 1,
 							"maximum": 1000
@@ -3740,9 +3684,9 @@
 						"required": false,
 						"schema": {
 							"$schema": "https://json-schema.org/draft/2020-12/schema",
-							"description": "Opaque cursor from a previous response. Omit for the first page",
 							"type": "string",
-							"minLength": 1
+							"minLength": 1,
+							"description": "Opaque cursor from a previous response. Omit for the first page"
 						}
 					},
 					{
@@ -3850,13 +3794,9 @@
 										},
 										"nextIterator": {
 											"description": "Pass as `iterator` to fetch the next page. Null on the last page",
-											"anyOf": [
-												{
-													"type": "string"
-												},
-												{
-													"type": "null"
-												}
+											"type": [
+												"string",
+												"null"
 											]
 										},
 										"hasMoreResults": {
@@ -3883,15 +3823,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"INVALID_REQUEST"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -3912,15 +3852,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"UNAUTHENTICATED"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -3941,15 +3881,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"FORBIDDEN"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -3978,15 +3918,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"RATE_LIMITED"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -4007,15 +3947,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"INTERNAL_ERROR"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -4063,7 +4003,7 @@
 													"id": {
 														"type": "string",
 														"format": "uuid",
-														"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$"
+														"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
 													},
 													"status": {
 														"type": "string",
@@ -4078,23 +4018,15 @@
 														"type": "string"
 													},
 													"exportName": {
-														"anyOf": [
-															{
-																"type": "string"
-															},
-															{
-																"type": "null"
-															}
+														"type": [
+															"string",
+															"null"
 														]
 													},
 													"requestedByUserEmail": {
-														"anyOf": [
-															{
-																"type": "string"
-															},
-															{
-																"type": "null"
-															}
+														"type": [
+															"string",
+															"null"
 														]
 													},
 													"exportConfig": {
@@ -4163,13 +4095,9 @@
 														]
 													},
 													"completedAt": {
-														"anyOf": [
-															{
-																"type": "string"
-															},
-															{
-																"type": "null"
-															}
+														"type": [
+															"string",
+															"null"
 														]
 													},
 													"createdAt": {
@@ -4179,8 +4107,8 @@
 														"type": "string"
 													},
 													"isExpired": {
-														"description": "Exports older than 30 days have had their files deleted",
-														"type": "boolean"
+														"type": "boolean",
+														"description": "Exports older than 30 days have had their files deleted"
 													}
 												},
 												"required": [
@@ -4217,15 +4145,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"UNAUTHENTICATED"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -4246,15 +4174,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"FORBIDDEN"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -4283,15 +4211,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"RATE_LIMITED"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -4312,15 +4240,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"INTERNAL_ERROR"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -4417,7 +4345,7 @@
 										"id": {
 											"type": "string",
 											"format": "uuid",
-											"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$"
+											"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
 										},
 										"status": {
 											"type": "string",
@@ -4432,23 +4360,15 @@
 											"type": "string"
 										},
 										"exportName": {
-											"anyOf": [
-												{
-													"type": "string"
-												},
-												{
-													"type": "null"
-												}
+											"type": [
+												"string",
+												"null"
 											]
 										},
 										"requestedByUserEmail": {
-											"anyOf": [
-												{
-													"type": "string"
-												},
-												{
-													"type": "null"
-												}
+											"type": [
+												"string",
+												"null"
 											]
 										},
 										"exportConfig": {
@@ -4517,13 +4437,9 @@
 											]
 										},
 										"completedAt": {
-											"anyOf": [
-												{
-													"type": "string"
-												},
-												{
-													"type": "null"
-												}
+											"type": [
+												"string",
+												"null"
 											]
 										},
 										"createdAt": {
@@ -4533,8 +4449,8 @@
 											"type": "string"
 										},
 										"isExpired": {
-											"description": "Exports older than 30 days have had their files deleted",
-											"type": "boolean"
+											"type": "boolean",
+											"description": "Exports older than 30 days have had their files deleted"
 										}
 									},
 									"required": [
@@ -4563,15 +4479,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"INVALID_REQUEST"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -4592,15 +4508,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"UNAUTHENTICATED"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -4621,15 +4537,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"FORBIDDEN"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -4658,15 +4574,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"RATE_LIMITED"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -4687,15 +4603,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"INTERNAL_ERROR"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -4735,6 +4651,9 @@
 								"type": "object",
 								"properties": {
 									"filters": {
+										"type": "object",
+										"properties": {},
+										"additionalProperties": {},
 										"description": "Filter group over your dataset’s data points, in the same format as company search. List the data points first (dataset_list_company_fields, or GET /companies/fields)",
 										"examples": [
 											{
@@ -4748,14 +4667,11 @@
 													}
 												]
 											}
-										],
-										"type": "object",
-										"properties": {},
-										"additionalProperties": {}
+										]
 									},
 									"excludeDomains": {
-										"description": "Companies left out whatever the filters say",
 										"default": [],
+										"description": "Companies left out whatever the filters say",
 										"maxItems": 10000,
 										"type": "array",
 										"items": {
@@ -4768,14 +4684,13 @@
 										"default": null,
 										"anyOf": [
 											{
-												"description": "Caps the segment at a number of companies, keeping the first by orderBy",
 												"type": "object",
 												"properties": {
 													"max": {
-														"description": "At most this many companies are included",
 														"type": "integer",
 														"exclusiveMinimum": 0,
-														"maximum": 9007199254740991
+														"maximum": 9007199254740991,
+														"description": "At most this many companies are included"
 													},
 													"orderBy": {
 														"description": "fieldName of the data point that decides which companies stay",
@@ -4792,7 +4707,8 @@
 												},
 												"required": [
 													"max"
-												]
+												],
+												"description": "Caps the segment at a number of companies, keeping the first by orderBy"
 											},
 											{
 												"type": "null"
@@ -4800,8 +4716,8 @@
 										]
 									},
 									"sample": {
-										"description": "Companies to return, 0 to 50",
 										"default": 0,
+										"description": "Companies to return, 0 to 50",
 										"type": "integer",
 										"minimum": 0,
 										"maximum": 50
@@ -4829,7 +4745,6 @@
 											"maximum": 9007199254740991
 										},
 										"companies": {
-											"description": "Identifying data points only",
 											"type": "array",
 											"items": {
 												"type": "object",
@@ -4837,7 +4752,8 @@
 													"type": "string"
 												},
 												"additionalProperties": {}
-											}
+											},
+											"description": "Identifying data points only"
 										}
 									},
 									"required": [
@@ -4858,15 +4774,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"INVALID_REQUEST"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -4887,15 +4803,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"UNAUTHENTICATED"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -4916,15 +4832,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"FORBIDDEN"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -4953,15 +4869,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"RATE_LIMITED"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -4982,15 +4898,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"INTERNAL_ERROR"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -5028,8 +4944,8 @@
 						"required": true,
 						"schema": {
 							"$schema": "https://json-schema.org/draft/2020-12/schema",
-							"description": "The segment id",
-							"type": "string"
+							"type": "string",
+							"description": "The segment id"
 						}
 					}
 				],
@@ -5048,17 +4964,16 @@
 												"id": {
 													"type": "string",
 													"format": "uuid",
-													"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$"
+													"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
 												},
 												"name": {
 													"type": "string"
 												},
 												"isDynamic": {
-													"description": "A dynamic segment refreshes after every dataset sync",
-													"type": "boolean"
+													"type": "boolean",
+													"description": "A dynamic segment refreshes after every dataset sync"
 												},
 												"status": {
-													"description": "NEW: companies never calculated. UPDATING: recalculating companies after a criteria change. REFRESHING: recalculating companies and searching for contacts. READY: up to date. FAILED: the last calculation or refresh failed; companies from the last good run stay listed",
 													"type": "string",
 													"enum": [
 														"NEW",
@@ -5066,10 +4981,10 @@
 														"REFRESHING",
 														"READY",
 														"FAILED"
-													]
+													],
+													"description": "NEW: companies never calculated. UPDATING: recalculating companies after a criteria change. REFRESHING: recalculating companies and searching for contacts. READY: up to date. FAILED: the last calculation or refresh failed; companies from the last good run stay listed"
 												},
 												"sizeCompanies": {
-													"description": "Companies in the segment. Null until first calculated",
 													"anyOf": [
 														{
 															"type": "integer",
@@ -5079,7 +4994,8 @@
 														{
 															"type": "null"
 														}
-													]
+													],
+													"description": "Companies in the segment. Null until first calculated"
 												},
 												"sizeContacts": {
 													"anyOf": [
@@ -5094,13 +5010,9 @@
 													]
 												},
 												"lastRefreshedAt": {
-													"anyOf": [
-														{
-															"type": "string"
-														},
-														{
-															"type": "null"
-														}
+													"type": [
+														"string",
+														"null"
 													]
 												},
 												"createdAt": {
@@ -5119,14 +5031,13 @@
 												"companyLimit": {
 													"anyOf": [
 														{
-															"description": "Caps the segment at a number of companies, keeping the first by orderBy",
 															"type": "object",
 															"properties": {
 																"max": {
-																	"description": "At most this many companies are included",
 																	"type": "integer",
 																	"exclusiveMinimum": 0,
-																	"maximum": 9007199254740991
+																	"maximum": 9007199254740991,
+																	"description": "At most this many companies are included"
 																},
 																"orderBy": {
 																	"description": "fieldName of the data point that decides which companies stay",
@@ -5144,7 +5055,8 @@
 															"required": [
 																"max"
 															],
-															"additionalProperties": false
+															"additionalProperties": false,
+															"description": "Caps the segment at a number of companies, keeping the first by orderBy"
 														},
 														{
 															"type": "null"
@@ -5186,15 +5098,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"INVALID_REQUEST"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -5215,15 +5127,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"UNAUTHENTICATED"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -5244,15 +5156,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"FORBIDDEN"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -5273,15 +5185,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"NOT_FOUND"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -5302,15 +5214,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"CONFLICT"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -5339,15 +5251,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"RATE_LIMITED"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -5368,15 +5280,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"INTERNAL_ERROR"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -5458,10 +5370,7 @@
 											}
 										]
 									}
-								},
-								"required": [
-									"filters"
-								]
+								}
 							}
 						}
 					}
@@ -5491,13 +5400,9 @@
 											"maximum": 9007199254740991
 										},
 										"nextIterator": {
-											"anyOf": [
-												{
-													"type": "string"
-												},
-												{
-													"type": "null"
-												}
+											"type": [
+												"string",
+												"null"
 											]
 										},
 										"hasMoreResults": {
@@ -5524,15 +5429,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"INVALID_REQUEST"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -5553,15 +5458,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"UNAUTHENTICATED"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -5582,15 +5487,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"FORBIDDEN"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -5619,15 +5524,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"RATE_LIMITED"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
@@ -5648,15 +5553,15 @@
 									"type": "object",
 									"properties": {
 										"error": {
-											"description": "Human readable. Wording may change between releases",
-											"type": "string"
+											"type": "string",
+											"description": "Human readable. Wording may change between releases"
 										},
 										"code": {
-											"description": "Stable identifier. Match on this rather than on `error`",
 											"type": "string",
 											"enum": [
 												"INTERNAL_ERROR"
-											]
+											],
+											"description": "Stable identifier. Match on this rather than on `error`"
 										}
 									},
 									"required": [
