@@ -1,0 +1,141 @@
+{
+	"name": "Goodfit: enrich new HubSpot companies (hourly)",
+	"nodes": [
+		{
+			"parameters": {
+				"content": "## Enrich new HubSpot companies\nEvery hour, finds companies created in HubSpot in the last 70 minutes and sends each **domain** to Goodfit with its HubSpot company ID, so Goodfit's HubSpot sync updates the right record.\n\nThe window overlaps the schedule on purpose. Re-submitting a company is harmless, and it avoids gaps when a run is late.\n\n**Set up:** add HubSpot and Goodfit API credentials.",
+				"height": 250,
+				"width": 420
+			},
+			"id": "2c33c6f1-771f-4c48-8bbb-8dcce7c53223",
+			"name": "Setup",
+			"type": "n8n-nodes-base.stickyNote",
+			"typeVersion": 1,
+			"position": [-80, -330]
+		},
+		{
+			"parameters": {
+				"rule": {
+					"interval": [
+						{
+							"field": "hours"
+						}
+					]
+				}
+			},
+			"id": "1256a2c7-bd93-42e5-8c2b-62003a5f5ff4",
+			"name": "Every hour",
+			"type": "n8n-nodes-base.scheduleTrigger",
+			"typeVersion": 1.2,
+			"position": [0, 0]
+		},
+		{
+			"parameters": {
+				"authentication": "oAuth2",
+				"resource": "company",
+				"operation": "getRecentlyCreatedUpdated",
+				"returnAll": true,
+				"additionalFields": {
+					"since": "={{ $now.minus({ minutes: 70 }).toMillis() }}",
+					"propertiesCollection": {
+						"propertiesValues": {
+							"properties": ["createdate", "domain"]
+						}
+					}
+				}
+			},
+			"id": "d80cfd45-b622-4e04-a5a9-1422a856c190",
+			"name": "Recently created or updated companies",
+			"type": "n8n-nodes-base.hubspot",
+			"typeVersion": 2.2,
+			"position": [220, 0]
+		},
+		{
+			"parameters": {
+				"conditions": {
+					"options": {
+						"caseSensitive": true,
+						"leftValue": "",
+						"typeValidation": "strict",
+						"version": 2
+					},
+					"conditions": [
+						{
+							"id": "41d6281e-a07b-46e5-8db5-9ded0f13fafa",
+							"leftValue": "={{ Number($json.properties.createdate.value) }}",
+							"rightValue": "={{ $now.minus({ minutes: 70 }).toMillis() }}",
+							"operator": {
+								"type": "number",
+								"operation": "gt"
+							}
+						}
+					],
+					"combinator": "and"
+				},
+				"options": {}
+			},
+			"id": "00b3c2e4-655b-4b1b-b66d-35f7f16fdb14",
+			"name": "Created in the window?",
+			"type": "n8n-nodes-base.if",
+			"typeVersion": 2.2,
+			"position": [440, 0]
+		},
+		{
+			"parameters": {
+				"resource": "company",
+				"operation": "enrich",
+				"identifyBy": "domain",
+				"domain": "={{ $json.properties.domain.value }}",
+				"skipEmptyDomain": true,
+				"additionalFields": {
+					"hubspotId": "={{ $json.companyId }}"
+				},
+				"waitForCompletion": false
+			},
+			"id": "edc9c026-feeb-402e-8065-f6f4d915f4d1",
+			"name": "Goodfit: enrich company",
+			"type": "n8n-nodes-goodfit.goodFit",
+			"typeVersion": 1,
+			"position": [660, 0],
+			"onError": "continueRegularOutput"
+		}
+	],
+	"connections": {
+		"Every hour": {
+			"main": [
+				[
+					{
+						"node": "Recently created or updated companies",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Recently created or updated companies": {
+			"main": [
+				[
+					{
+						"node": "Created in the window?",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Created in the window?": {
+			"main": [
+				[
+					{
+						"node": "Goodfit: enrich company",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		}
+	},
+	"settings": {
+		"executionOrder": "v1"
+	}
+}

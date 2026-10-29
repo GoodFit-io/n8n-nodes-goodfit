@@ -1,0 +1,174 @@
+{
+	"name": "Goodfit: enrich requested Salesforce accounts and record the status",
+	"nodes": [
+		{
+			"parameters": {
+				"content": "## Enrich accounts flagged for enrichment\nEvery hour, picks up accounts with **Goodfit_Request_Enrichment__c** ticked and no **Goodfit_Enrichment_Status__c** yet. It enriches them, waits for Goodfit to finish, then writes the outcome back.\n\n- Finished: status is Completed, Skipped or Error, and the reason goes in **Goodfit_Enrichment_Detail__c**.\n- Still running at the timeout: left blank, so the next run picks it up again.\n\n**Set up:** create the three custom fields on Account (checkbox, text, text) or rename them in the Salesforce nodes. Then add Salesforce and Goodfit API credentials.",
+				"height": 300,
+				"width": 520
+			},
+			"id": "045204a6-1869-42ff-8d36-f0341ded5adc",
+			"name": "Setup",
+			"type": "n8n-nodes-base.stickyNote",
+			"typeVersion": 1,
+			"position": [-80, -380]
+		},
+		{
+			"parameters": {
+				"rule": {
+					"interval": [
+						{
+							"field": "hours"
+						}
+					]
+				}
+			},
+			"id": "c6dc0086-f0dd-4389-83d5-eb649aca1212",
+			"name": "Every hour",
+			"type": "n8n-nodes-base.scheduleTrigger",
+			"typeVersion": 1.2,
+			"position": [0, 0]
+		},
+		{
+			"parameters": {
+				"resource": "search",
+				"query": "={{ \"SELECT Id, Website FROM Account \" + \"WHERE Goodfit_Request_Enrichment__c = true AND Goodfit_Enrichment_Status__c = null \" + \"ORDER BY LastModifiedDate ASC LIMIT 200\" }}"
+			},
+			"id": "99fcd27c-5624-4422-8281-1c6f52b84474",
+			"name": "Accounts waiting for enrichment",
+			"type": "n8n-nodes-base.salesforce",
+			"typeVersion": 1,
+			"position": [220, 0]
+		},
+		{
+			"parameters": {
+				"resource": "company",
+				"operation": "enrich",
+				"identifyBy": "domain",
+				"domain": "={{ $json.Website }}",
+				"skipEmptyDomain": true,
+				"additionalFields": {
+					"salesforceId": "={{ $json.Id }}"
+				},
+				"waitForCompletion": true,
+				"timeoutSeconds": 300,
+				"pollIntervalSeconds": 10,
+				"includeCompanyData": false,
+				"includeInputFields": true
+			},
+			"id": "672f7c2d-e259-4155-a04f-63d5546b4fef",
+			"name": "Goodfit: enrich and wait",
+			"type": "n8n-nodes-goodfit.goodFit",
+			"typeVersion": 1,
+			"position": [440, 0],
+			"onError": "continueRegularOutput"
+		},
+		{
+			"parameters": {
+				"conditions": {
+					"options": {
+						"caseSensitive": true,
+						"leftValue": "",
+						"typeValidation": "strict",
+						"version": 2
+					},
+					"conditions": [
+						{
+							"id": "9ca40712-93ec-4f3d-99b3-1f7905589429",
+							"leftValue": "={{ $json.timedOut === true }}",
+							"rightValue": "",
+							"operator": {
+								"type": "boolean",
+								"operation": "true",
+								"singleValue": true
+							}
+						}
+					],
+					"combinator": "and"
+				},
+				"options": {}
+			},
+			"id": "737a2051-78d2-47f2-b5ac-5d9b562f7237",
+			"name": "Still running?",
+			"type": "n8n-nodes-base.if",
+			"typeVersion": 2.2,
+			"position": [660, 0]
+		},
+		{
+			"parameters": {
+				"resource": "account",
+				"operation": "update",
+				"accountId": "={{ $json.Id }}",
+				"updateFields": {
+					"customFieldsUi": {
+						"customFieldsValues": [
+							{
+								"fieldId": "Goodfit_Enrichment_Status__c",
+								"value": "={{ $json.error ? 'Error' : $json.status }}"
+							},
+							{
+								"fieldId": "Goodfit_Enrichment_Detail__c",
+								"value": "={{ $json.error || $json.context?.skipReasonDescription || '' }}"
+							}
+						]
+					}
+				}
+			},
+			"id": "023bcc6d-7029-4966-8ae4-3e69330577ec",
+			"name": "Record status on the account",
+			"type": "n8n-nodes-base.salesforce",
+			"typeVersion": 1,
+			"position": [880, 80]
+		}
+	],
+	"connections": {
+		"Every hour": {
+			"main": [
+				[
+					{
+						"node": "Accounts waiting for enrichment",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Accounts waiting for enrichment": {
+			"main": [
+				[
+					{
+						"node": "Goodfit: enrich and wait",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Goodfit: enrich and wait": {
+			"main": [
+				[
+					{
+						"node": "Still running?",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Still running?": {
+			"main": [
+				[],
+				[
+					{
+						"node": "Record status on the account",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		}
+	},
+	"settings": {
+		"executionOrder": "v1"
+	}
+}

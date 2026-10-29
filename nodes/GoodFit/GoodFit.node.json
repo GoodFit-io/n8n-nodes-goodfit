@@ -1,0 +1,21 @@
+{
+	"node": "n8n-nodes-goodfit.goodFit",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": ["Sales", "Marketing & Content"],
+	"resources": {
+		"credentialDocumentation": [
+			{
+				"url": "https://docs.goodfit.io/goodfit-docs/apis/apis-introduction"
+			}
+		],
+		"primaryDocumentation": [
+			{
+				"url": "https://github.com/GoodFit-io/n8n-nodes-goodfit?tab=readme-ov-file"
+			},
+			{
+				"url": "https://docs.goodfit.io/goodfit-docs/apis/apis-introduction"
+			}
+		]
+	}
+}

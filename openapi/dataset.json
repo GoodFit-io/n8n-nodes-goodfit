@@ -1,0 +1,5675 @@
+{
+	"openapi": "3.1.0",
+	"info": {
+		"title": "Goodfit Dataset API",
+		"version": "1.0.0",
+		"description": "The companies and contacts in your Goodfit dataset, its segments, and CSV exports of it."
+	},
+	"servers": [
+		{
+			"url": "https://api.goodfit.io"
+		}
+	],
+	"components": {
+		"securitySchemes": {
+			"apiKey": {
+				"type": "apiKey",
+				"in": "header",
+				"name": "Authorization",
+				"description": "Your Goodfit API key, sent as the bare header value"
+			}
+		}
+	},
+	"security": [
+		{
+			"apiKey": []
+		}
+	],
+	"paths": {
+		"/dataset/segments": {
+			"post": {
+				"operationId": "dataset:createSegment",
+				"summary": "Create a segment",
+				"description": "Saves a segment and starts calculating its companies, which runs in the background: the segment comes back UPDATING, so poll GET /segments/{segmentId} until it is READY. Spends no credits.",
+				"tags": [
+					"Segments"
+				],
+				"security": [
+					{
+						"apiKey": [
+							"CLIENT_DATA_API"
+						]
+					}
+				],
+				"x-rate-limit-cost": 1,
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$schema": "https://json-schema.org/draft/2020-12/schema",
+								"type": "object",
+								"properties": {
+									"filters": {
+										"description": "Filter group over your dataset’s data points, in the same format as company search. List the data points first (dataset_list_company_fields, or GET /companies/fields)",
+										"examples": [
+											{
+												"id": "root",
+												"combinator": "and",
+												"rules": [
+													{
+														"id": "r1",
+														"field": "__match_sourcing_criteria",
+														"operator": "booleanTrue"
+													}
+												]
+											}
+										],
+										"type": "object",
+										"properties": {},
+										"additionalProperties": {}
+									},
+									"excludeDomains": {
+										"description": "Companies left out whatever the filters say",
+										"default": [],
+										"maxItems": 10000,
+										"type": "array",
+										"items": {
+											"type": "string",
+											"minLength": 1,
+											"maxLength": 253
+										}
+									},
+									"companyLimit": {
+										"default": null,
+										"anyOf": [
+											{
+												"description": "Caps the segment at a number of companies, keeping the first by orderBy",
+												"type": "object",
+												"properties": {
+													"max": {
+														"description": "At most this many companies are included",
+														"type": "integer",
+														"exclusiveMinimum": 0,
+														"maximum": 9007199254740991
+													},
+													"orderBy": {
+														"description": "fieldName of the data point that decides which companies stay",
+														"type": "string",
+														"minLength": 1
+													},
+													"orderDirection": {
+														"type": "string",
+														"enum": [
+															"ASC",
+															"DESC"
+														]
+													}
+												},
+												"required": [
+													"max"
+												]
+											},
+											{
+												"type": "null"
+											}
+										]
+									},
+									"name": {
+										"description": "Unique among your segments",
+										"type": "string",
+										"minLength": 1,
+										"maxLength": 255
+									},
+									"isDynamic": {
+										"description": "Refresh after every dataset sync",
+										"default": false,
+										"type": "boolean"
+									}
+								},
+								"required": [
+									"filters",
+									"name"
+								]
+							}
+						}
+					}
+				},
+				"responses": {
+					"202": {
+						"description": "Saved; calculating",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"segment": {
+											"type": "object",
+											"properties": {
+												"id": {
+													"type": "string",
+													"format": "uuid",
+													"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$"
+												},
+												"name": {
+													"type": "string"
+												},
+												"isDynamic": {
+													"description": "A dynamic segment refreshes after every dataset sync",
+													"type": "boolean"
+												},
+												"status": {
+													"description": "NEW: companies never calculated. UPDATING: recalculating companies after a criteria change. REFRESHING: recalculating companies and searching for contacts. READY: up to date. FAILED: the last calculation or refresh failed; companies from the last good run stay listed",
+													"type": "string",
+													"enum": [
+														"NEW",
+														"UPDATING",
+														"REFRESHING",
+														"READY",
+														"FAILED"
+													]
+												},
+												"sizeCompanies": {
+													"description": "Companies in the segment. Null until first calculated",
+													"anyOf": [
+														{
+															"type": "integer",
+															"minimum": -9007199254740991,
+															"maximum": 9007199254740991
+														},
+														{
+															"type": "null"
+														}
+													]
+												},
+												"sizeContacts": {
+													"anyOf": [
+														{
+															"type": "integer",
+															"minimum": -9007199254740991,
+															"maximum": 9007199254740991
+														},
+														{
+															"type": "null"
+														}
+													]
+												},
+												"lastRefreshedAt": {
+													"anyOf": [
+														{
+															"type": "string"
+														},
+														{
+															"type": "null"
+														}
+													]
+												},
+												"createdAt": {
+													"type": "string"
+												},
+												"updatedAt": {
+													"type": "string"
+												},
+												"filters": {},
+												"excludeDomains": {
+													"type": "array",
+													"items": {
+														"type": "string"
+													}
+												},
+												"companyLimit": {
+													"anyOf": [
+														{
+															"description": "Caps the segment at a number of companies, keeping the first by orderBy",
+															"type": "object",
+															"properties": {
+																"max": {
+																	"description": "At most this many companies are included",
+																	"type": "integer",
+																	"exclusiveMinimum": 0,
+																	"maximum": 9007199254740991
+																},
+																"orderBy": {
+																	"description": "fieldName of the data point that decides which companies stay",
+																	"type": "string",
+																	"minLength": 1
+																},
+																"orderDirection": {
+																	"type": "string",
+																	"enum": [
+																		"ASC",
+																		"DESC"
+																	]
+																}
+															},
+															"required": [
+																"max"
+															],
+															"additionalProperties": false
+														},
+														{
+															"type": "null"
+														}
+													]
+												}
+											},
+											"required": [
+												"id",
+												"name",
+												"isDynamic",
+												"status",
+												"sizeCompanies",
+												"sizeContacts",
+												"lastRefreshedAt",
+												"createdAt",
+												"updatedAt",
+												"filters",
+												"excludeDomains",
+												"companyLimit"
+											],
+											"additionalProperties": false
+										}
+									},
+									"required": [
+										"segment"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INVALID_REQUEST"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"UNAUTHENTICATED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "The account has reached its segment limit",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"FORBIDDEN"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "A live segment already has this name",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"CONFLICT"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Too many requests",
+						"headers": {
+							"Retry-After": {
+								"description": "Seconds to wait before retrying",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"RATE_LIMITED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal server error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INTERNAL_ERROR"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					}
+				}
+			},
+			"get": {
+				"operationId": "dataset:listSegments",
+				"summary": "List segments",
+				"description": "Your segments, newest first, with their status and size. GET /segments/{segmentId} returns a segment’s criteria.",
+				"tags": [
+					"Segments"
+				],
+				"security": [
+					{
+						"apiKey": [
+							"CLIENT_DATA_API"
+						]
+					}
+				],
+				"x-rate-limit-cost": 1,
+				"parameters": [
+					{
+						"name": "limit",
+						"in": "query",
+						"required": false,
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"description": "Rows per page, 1 to 1000",
+							"default": 100,
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 1000
+						}
+					},
+					{
+						"name": "iterator",
+						"in": "query",
+						"required": false,
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"description": "Opaque cursor from a previous response. Omit for the first page",
+							"type": "string",
+							"minLength": 1
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "List segments",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"segments": {
+											"type": "array",
+											"items": {
+												"description": "A segment without its criteria",
+												"type": "object",
+												"properties": {
+													"id": {
+														"type": "string",
+														"format": "uuid",
+														"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$"
+													},
+													"name": {
+														"type": "string"
+													},
+													"isDynamic": {
+														"description": "A dynamic segment refreshes after every dataset sync",
+														"type": "boolean"
+													},
+													"status": {
+														"description": "NEW: companies never calculated. UPDATING: recalculating companies after a criteria change. REFRESHING: recalculating companies and searching for contacts. READY: up to date. FAILED: the last calculation or refresh failed; companies from the last good run stay listed",
+														"type": "string",
+														"enum": [
+															"NEW",
+															"UPDATING",
+															"REFRESHING",
+															"READY",
+															"FAILED"
+														]
+													},
+													"sizeCompanies": {
+														"description": "Companies in the segment. Null until first calculated",
+														"anyOf": [
+															{
+																"type": "integer",
+																"minimum": -9007199254740991,
+																"maximum": 9007199254740991
+															},
+															{
+																"type": "null"
+															}
+														]
+													},
+													"sizeContacts": {
+														"anyOf": [
+															{
+																"type": "integer",
+																"minimum": -9007199254740991,
+																"maximum": 9007199254740991
+															},
+															{
+																"type": "null"
+															}
+														]
+													},
+													"lastRefreshedAt": {
+														"anyOf": [
+															{
+																"type": "string"
+															},
+															{
+																"type": "null"
+															}
+														]
+													},
+													"createdAt": {
+														"type": "string"
+													},
+													"updatedAt": {
+														"type": "string"
+													}
+												},
+												"required": [
+													"id",
+													"name",
+													"isDynamic",
+													"status",
+													"sizeCompanies",
+													"sizeContacts",
+													"lastRefreshedAt",
+													"createdAt",
+													"updatedAt"
+												],
+												"additionalProperties": false
+											}
+										},
+										"totalSegments": {
+											"type": "integer",
+											"minimum": 0,
+											"maximum": 9007199254740991
+										},
+										"nextIterator": {
+											"description": "Pass as `iterator` to fetch the next page. Null on the last page",
+											"anyOf": [
+												{
+													"type": "string"
+												},
+												{
+													"type": "null"
+												}
+											]
+										},
+										"hasMoreResults": {
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"segments",
+										"totalSegments",
+										"nextIterator",
+										"hasMoreResults"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INVALID_REQUEST"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"UNAUTHENTICATED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"FORBIDDEN"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Too many requests",
+						"headers": {
+							"Retry-After": {
+								"description": "Seconds to wait before retrying",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"RATE_LIMITED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal server error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INTERNAL_ERROR"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/dataset/segments/{segmentId}": {
+			"delete": {
+				"operationId": "dataset:deleteSegment",
+				"summary": "Delete a segment",
+				"description": "Deletes the segment and, in the background, removes its companies and contacts from it. The contacts stay granted to your account and keep appearing in GET /contacts.",
+				"tags": [
+					"Segments"
+				],
+				"security": [
+					{
+						"apiKey": [
+							"CLIENT_DATA_API"
+						]
+					}
+				],
+				"x-rate-limit-cost": 1,
+				"parameters": [
+					{
+						"name": "segmentId",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"description": "The segment id",
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"204": {
+						"description": "Deleted; no body"
+					},
+					"400": {
+						"description": "Bad request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INVALID_REQUEST"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"UNAUTHENTICATED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"FORBIDDEN"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "No segment with this id exists for your account",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"NOT_FOUND"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "The segment is updating or refreshing",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"CONFLICT"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Too many requests",
+						"headers": {
+							"Retry-After": {
+								"description": "Seconds to wait before retrying",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"RATE_LIMITED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal server error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INTERNAL_ERROR"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					}
+				}
+			},
+			"get": {
+				"operationId": "dataset:getSegment",
+				"summary": "Get a segment",
+				"description": "One segment: its criteria, status and size. Poll this after a change until status is READY.",
+				"tags": [
+					"Segments"
+				],
+				"security": [
+					{
+						"apiKey": [
+							"CLIENT_DATA_API"
+						]
+					}
+				],
+				"x-rate-limit-cost": 1,
+				"parameters": [
+					{
+						"name": "segmentId",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"description": "The segment id",
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Get a segment",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"segment": {
+											"type": "object",
+											"properties": {
+												"id": {
+													"type": "string",
+													"format": "uuid",
+													"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$"
+												},
+												"name": {
+													"type": "string"
+												},
+												"isDynamic": {
+													"description": "A dynamic segment refreshes after every dataset sync",
+													"type": "boolean"
+												},
+												"status": {
+													"description": "NEW: companies never calculated. UPDATING: recalculating companies after a criteria change. REFRESHING: recalculating companies and searching for contacts. READY: up to date. FAILED: the last calculation or refresh failed; companies from the last good run stay listed",
+													"type": "string",
+													"enum": [
+														"NEW",
+														"UPDATING",
+														"REFRESHING",
+														"READY",
+														"FAILED"
+													]
+												},
+												"sizeCompanies": {
+													"description": "Companies in the segment. Null until first calculated",
+													"anyOf": [
+														{
+															"type": "integer",
+															"minimum": -9007199254740991,
+															"maximum": 9007199254740991
+														},
+														{
+															"type": "null"
+														}
+													]
+												},
+												"sizeContacts": {
+													"anyOf": [
+														{
+															"type": "integer",
+															"minimum": -9007199254740991,
+															"maximum": 9007199254740991
+														},
+														{
+															"type": "null"
+														}
+													]
+												},
+												"lastRefreshedAt": {
+													"anyOf": [
+														{
+															"type": "string"
+														},
+														{
+															"type": "null"
+														}
+													]
+												},
+												"createdAt": {
+													"type": "string"
+												},
+												"updatedAt": {
+													"type": "string"
+												},
+												"filters": {},
+												"excludeDomains": {
+													"type": "array",
+													"items": {
+														"type": "string"
+													}
+												},
+												"companyLimit": {
+													"anyOf": [
+														{
+															"description": "Caps the segment at a number of companies, keeping the first by orderBy",
+															"type": "object",
+															"properties": {
+																"max": {
+																	"description": "At most this many companies are included",
+																	"type": "integer",
+																	"exclusiveMinimum": 0,
+																	"maximum": 9007199254740991
+																},
+																"orderBy": {
+																	"description": "fieldName of the data point that decides which companies stay",
+																	"type": "string",
+																	"minLength": 1
+																},
+																"orderDirection": {
+																	"type": "string",
+																	"enum": [
+																		"ASC",
+																		"DESC"
+																	]
+																}
+															},
+															"required": [
+																"max"
+															],
+															"additionalProperties": false
+														},
+														{
+															"type": "null"
+														}
+													]
+												}
+											},
+											"required": [
+												"id",
+												"name",
+												"isDynamic",
+												"status",
+												"sizeCompanies",
+												"sizeContacts",
+												"lastRefreshedAt",
+												"createdAt",
+												"updatedAt",
+												"filters",
+												"excludeDomains",
+												"companyLimit"
+											],
+											"additionalProperties": false
+										}
+									},
+									"required": [
+										"segment"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INVALID_REQUEST"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"UNAUTHENTICATED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"FORBIDDEN"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "No segment with this id exists for your account",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"NOT_FOUND"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Too many requests",
+						"headers": {
+							"Retry-After": {
+								"description": "Seconds to wait before retrying",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"RATE_LIMITED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal server error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INTERNAL_ERROR"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					}
+				}
+			},
+			"patch": {
+				"operationId": "dataset:updateSegment",
+				"summary": "Update a segment",
+				"description": "Changes only the fields sent. New criteria recalculate the companies in the background (202): poll GET /segments/{segmentId} until it is READY. A name or isDynamic change alone saves straight away (200). A dynamic segment with personas searches for contacts after every dataset sync, spending contact credits.",
+				"tags": [
+					"Segments"
+				],
+				"security": [
+					{
+						"apiKey": [
+							"CLIENT_DATA_API"
+						]
+					}
+				],
+				"x-rate-limit-cost": 1,
+				"parameters": [
+					{
+						"name": "segmentId",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"description": "The segment id",
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": false,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$schema": "https://json-schema.org/draft/2020-12/schema",
+								"type": "object",
+								"properties": {
+									"name": {
+										"type": "string",
+										"minLength": 1,
+										"maxLength": 255
+									},
+									"isDynamic": {
+										"description": "A dynamic segment refreshes after every dataset sync",
+										"type": "boolean"
+									},
+									"filters": {
+										"description": "Filter group over your dataset’s data points, in the same format as company search. List the data points first (dataset_list_company_fields, or GET /companies/fields)",
+										"examples": [
+											{
+												"id": "root",
+												"combinator": "and",
+												"rules": [
+													{
+														"id": "r1",
+														"field": "__match_sourcing_criteria",
+														"operator": "booleanTrue"
+													}
+												]
+											}
+										],
+										"type": "object",
+										"properties": {},
+										"additionalProperties": {}
+									},
+									"excludeDomains": {
+										"maxItems": 10000,
+										"type": "array",
+										"items": {
+											"type": "string",
+											"minLength": 1,
+											"maxLength": 253
+										}
+									},
+									"companyLimit": {
+										"anyOf": [
+											{
+												"description": "Caps the segment at a number of companies, keeping the first by orderBy",
+												"type": "object",
+												"properties": {
+													"max": {
+														"description": "At most this many companies are included",
+														"type": "integer",
+														"exclusiveMinimum": 0,
+														"maximum": 9007199254740991
+													},
+													"orderBy": {
+														"description": "fieldName of the data point that decides which companies stay",
+														"type": "string",
+														"minLength": 1
+													},
+													"orderDirection": {
+														"type": "string",
+														"enum": [
+															"ASC",
+															"DESC"
+														]
+													}
+												},
+												"required": [
+													"max"
+												]
+											},
+											{
+												"type": "null"
+											}
+										]
+									}
+								}
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "Update a segment",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"segment": {
+											"type": "object",
+											"properties": {
+												"id": {
+													"type": "string",
+													"format": "uuid",
+													"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$"
+												},
+												"name": {
+													"type": "string"
+												},
+												"isDynamic": {
+													"description": "A dynamic segment refreshes after every dataset sync",
+													"type": "boolean"
+												},
+												"status": {
+													"description": "NEW: companies never calculated. UPDATING: recalculating companies after a criteria change. REFRESHING: recalculating companies and searching for contacts. READY: up to date. FAILED: the last calculation or refresh failed; companies from the last good run stay listed",
+													"type": "string",
+													"enum": [
+														"NEW",
+														"UPDATING",
+														"REFRESHING",
+														"READY",
+														"FAILED"
+													]
+												},
+												"sizeCompanies": {
+													"description": "Companies in the segment. Null until first calculated",
+													"anyOf": [
+														{
+															"type": "integer",
+															"minimum": -9007199254740991,
+															"maximum": 9007199254740991
+														},
+														{
+															"type": "null"
+														}
+													]
+												},
+												"sizeContacts": {
+													"anyOf": [
+														{
+															"type": "integer",
+															"minimum": -9007199254740991,
+															"maximum": 9007199254740991
+														},
+														{
+															"type": "null"
+														}
+													]
+												},
+												"lastRefreshedAt": {
+													"anyOf": [
+														{
+															"type": "string"
+														},
+														{
+															"type": "null"
+														}
+													]
+												},
+												"createdAt": {
+													"type": "string"
+												},
+												"updatedAt": {
+													"type": "string"
+												},
+												"filters": {},
+												"excludeDomains": {
+													"type": "array",
+													"items": {
+														"type": "string"
+													}
+												},
+												"companyLimit": {
+													"anyOf": [
+														{
+															"description": "Caps the segment at a number of companies, keeping the first by orderBy",
+															"type": "object",
+															"properties": {
+																"max": {
+																	"description": "At most this many companies are included",
+																	"type": "integer",
+																	"exclusiveMinimum": 0,
+																	"maximum": 9007199254740991
+																},
+																"orderBy": {
+																	"description": "fieldName of the data point that decides which companies stay",
+																	"type": "string",
+																	"minLength": 1
+																},
+																"orderDirection": {
+																	"type": "string",
+																	"enum": [
+																		"ASC",
+																		"DESC"
+																	]
+																}
+															},
+															"required": [
+																"max"
+															],
+															"additionalProperties": false
+														},
+														{
+															"type": "null"
+														}
+													]
+												}
+											},
+											"required": [
+												"id",
+												"name",
+												"isDynamic",
+												"status",
+												"sizeCompanies",
+												"sizeContacts",
+												"lastRefreshedAt",
+												"createdAt",
+												"updatedAt",
+												"filters",
+												"excludeDomains",
+												"companyLimit"
+											],
+											"additionalProperties": false
+										}
+									},
+									"required": [
+										"segment"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INVALID_REQUEST"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"UNAUTHENTICATED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"FORBIDDEN"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "No segment with this id exists for your account",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"NOT_FOUND"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "The segment is updating or refreshing, or another live segment has this name",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"CONFLICT"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Too many requests",
+						"headers": {
+							"Retry-After": {
+								"description": "Seconds to wait before retrying",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"RATE_LIMITED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal server error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INTERNAL_ERROR"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/dataset/companies/{domain}": {
+			"get": {
+				"operationId": "dataset:getCompany",
+				"summary": "Get a company by domain",
+				"tags": [
+					"Companies"
+				],
+				"security": [
+					{
+						"apiKey": [
+							"CLIENT_DATA_API"
+						]
+					}
+				],
+				"x-rate-limit-cost": 1,
+				"parameters": [
+					{
+						"name": "domain",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"description": "Primary domain, without scheme or path",
+							"type": "string",
+							"minLength": 1
+						}
+					},
+					{
+						"name": "data_points",
+						"in": "query",
+						"required": false,
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"description": "fieldNames of the data points to return, from the data points list. The identifying data points always come back. Omit for every data point; [\"*\"] also means every one; [] means only the identifying data points",
+							"anyOf": [
+								{
+									"maxItems": 200,
+									"type": "array",
+									"items": {
+										"type": "string",
+										"minLength": 1,
+										"maxLength": 200
+									}
+								},
+								{
+									"type": "string",
+									"minLength": 1,
+									"maxLength": 200
+								}
+							]
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Get a company by domain",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"company": {
+											"type": "object",
+											"properties": {
+												"__company_id": {
+													"type": "string"
+												},
+												"__added_at": {
+													"type": "string"
+												},
+												"__updated_at": {
+													"type": "string"
+												}
+											},
+											"required": [
+												"__company_id",
+												"__added_at",
+												"__updated_at"
+											],
+											"additionalProperties": {}
+										}
+									},
+									"required": [
+										"company"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INVALID_REQUEST"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"UNAUTHENTICATED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"FORBIDDEN"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "No company in your dataset has this domain",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"NOT_FOUND"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Too many requests",
+						"headers": {
+							"Retry-After": {
+								"description": "Seconds to wait before retrying",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"RATE_LIMITED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal server error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INTERNAL_ERROR"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/dataset/exports/{exportId}": {
+			"get": {
+				"operationId": "dataset:getExport",
+				"summary": "Get an export",
+				"tags": [
+					"Exports"
+				],
+				"security": [
+					{
+						"apiKey": [
+							"CLIENT_DATA_API"
+						]
+					}
+				],
+				"x-rate-limit-cost": 1,
+				"parameters": [
+					{
+						"name": "exportId",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"description": "The id returned by POST /exports",
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Get an export",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"export": {
+											"type": "object",
+											"properties": {
+												"id": {
+													"type": "string",
+													"format": "uuid",
+													"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$"
+												},
+												"status": {
+													"type": "string",
+													"enum": [
+														"WAITING",
+														"PROCESSING",
+														"COMPLETE",
+														"FAILED"
+													]
+												},
+												"type": {
+													"type": "string"
+												},
+												"exportName": {
+													"anyOf": [
+														{
+															"type": "string"
+														},
+														{
+															"type": "null"
+														}
+													]
+												},
+												"requestedByUserEmail": {
+													"anyOf": [
+														{
+															"type": "string"
+														},
+														{
+															"type": "null"
+														}
+													]
+												},
+												"exportConfig": {
+													"anyOf": [
+														{
+															"type": "object",
+															"properties": {
+																"filters": {
+																	"description": "Restricts the company rows exported. Contacts follow those companies",
+																	"examples": [
+																		{
+																			"id": "root",
+																			"combinator": "and",
+																			"rules": [
+																				{
+																					"id": "r1",
+																					"field": "__match_sourcing_criteria",
+																					"operator": "booleanTrue"
+																				}
+																			]
+																		}
+																	]
+																},
+																"columns": {
+																	"description": "fieldNames of the company data points in companies.csv. Defaults to all of them",
+																	"anyOf": [
+																		{
+																			"type": "array",
+																			"items": {
+																				"type": "string"
+																			}
+																		},
+																		{
+																			"type": "null"
+																		}
+																	]
+																}
+															},
+															"additionalProperties": false
+														},
+														{
+															"type": "null"
+														}
+													]
+												},
+												"parts": {
+													"anyOf": [
+														{
+															"type": "array",
+															"items": {
+																"type": "object",
+																"properties": {
+																	"filename": {
+																		"type": "string"
+																	}
+																},
+																"required": [
+																	"filename"
+																],
+																"additionalProperties": false
+															}
+														},
+														{
+															"type": "null"
+														}
+													]
+												},
+												"completedAt": {
+													"anyOf": [
+														{
+															"type": "string"
+														},
+														{
+															"type": "null"
+														}
+													]
+												},
+												"createdAt": {
+													"type": "string"
+												},
+												"updatedAt": {
+													"type": "string"
+												},
+												"isExpired": {
+													"description": "Exports older than 30 days have had their files deleted",
+													"type": "boolean"
+												}
+											},
+											"required": [
+												"id",
+												"status",
+												"type",
+												"exportName",
+												"requestedByUserEmail",
+												"exportConfig",
+												"parts",
+												"completedAt",
+												"createdAt",
+												"updatedAt",
+												"isExpired"
+											],
+											"additionalProperties": false
+										}
+									},
+									"required": [
+										"export"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INVALID_REQUEST"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"UNAUTHENTICATED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"FORBIDDEN"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "No export with this id exists for your account",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"NOT_FOUND"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Too many requests",
+						"headers": {
+							"Retry-After": {
+								"description": "Seconds to wait before retrying",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"RATE_LIMITED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal server error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INTERNAL_ERROR"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/dataset/exports/{exportId}/download": {
+			"post": {
+				"operationId": "dataset:getExportDownload",
+				"summary": "Get download URLs for an export",
+				"description": "Each URL is valid for 5 minutes. Call again for a fresh set.",
+				"tags": [
+					"Exports"
+				],
+				"security": [
+					{
+						"apiKey": [
+							"CLIENT_DATA_API"
+						]
+					}
+				],
+				"x-rate-limit-cost": 1,
+				"parameters": [
+					{
+						"name": "exportId",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"description": "The id returned by POST /exports",
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Get download URLs for an export",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"export": {
+											"type": "object",
+											"properties": {
+												"id": {
+													"type": "string",
+													"format": "uuid",
+													"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$"
+												},
+												"status": {
+													"type": "string",
+													"enum": [
+														"WAITING",
+														"PROCESSING",
+														"COMPLETE",
+														"FAILED"
+													]
+												},
+												"type": {
+													"type": "string"
+												},
+												"exportName": {
+													"anyOf": [
+														{
+															"type": "string"
+														},
+														{
+															"type": "null"
+														}
+													]
+												},
+												"requestedByUserEmail": {
+													"anyOf": [
+														{
+															"type": "string"
+														},
+														{
+															"type": "null"
+														}
+													]
+												},
+												"exportConfig": {
+													"anyOf": [
+														{
+															"type": "object",
+															"properties": {
+																"filters": {
+																	"description": "Restricts the company rows exported. Contacts follow those companies",
+																	"examples": [
+																		{
+																			"id": "root",
+																			"combinator": "and",
+																			"rules": [
+																				{
+																					"id": "r1",
+																					"field": "__match_sourcing_criteria",
+																					"operator": "booleanTrue"
+																				}
+																			]
+																		}
+																	]
+																},
+																"columns": {
+																	"description": "fieldNames of the company data points in companies.csv. Defaults to all of them",
+																	"anyOf": [
+																		{
+																			"type": "array",
+																			"items": {
+																				"type": "string"
+																			}
+																		},
+																		{
+																			"type": "null"
+																		}
+																	]
+																}
+															},
+															"additionalProperties": false
+														},
+														{
+															"type": "null"
+														}
+													]
+												},
+												"parts": {
+													"anyOf": [
+														{
+															"type": "array",
+															"items": {
+																"type": "object",
+																"properties": {
+																	"filename": {
+																		"type": "string"
+																	}
+																},
+																"required": [
+																	"filename"
+																],
+																"additionalProperties": false
+															}
+														},
+														{
+															"type": "null"
+														}
+													]
+												},
+												"completedAt": {
+													"anyOf": [
+														{
+															"type": "string"
+														},
+														{
+															"type": "null"
+														}
+													]
+												},
+												"createdAt": {
+													"type": "string"
+												},
+												"updatedAt": {
+													"type": "string"
+												},
+												"isExpired": {
+													"description": "Exports older than 30 days have had their files deleted",
+													"type": "boolean"
+												}
+											},
+											"required": [
+												"id",
+												"status",
+												"type",
+												"exportName",
+												"requestedByUserEmail",
+												"exportConfig",
+												"parts",
+												"completedAt",
+												"createdAt",
+												"updatedAt",
+												"isExpired"
+											],
+											"additionalProperties": false
+										},
+										"partDownloads": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"properties": {
+													"filename": {
+														"type": "string"
+													},
+													"downloadUrl": {
+														"description": "Pre-signed S3 URL, valid for 5 minutes",
+														"type": "string",
+														"format": "uri"
+													}
+												},
+												"required": [
+													"filename",
+													"downloadUrl"
+												],
+												"additionalProperties": false
+											}
+										}
+									},
+									"required": [
+										"export",
+										"partDownloads"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INVALID_REQUEST"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"UNAUTHENTICATED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"FORBIDDEN"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "No export with this id exists for your account",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"NOT_FOUND"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Too many requests",
+						"headers": {
+							"Retry-After": {
+								"description": "Seconds to wait before retrying",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"RATE_LIMITED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal server error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INTERNAL_ERROR"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/dataset/companies": {
+			"get": {
+				"operationId": "dataset:listCompanies",
+				"summary": "List companies",
+				"tags": [
+					"Companies"
+				],
+				"security": [
+					{
+						"apiKey": [
+							"CLIENT_DATA_API"
+						]
+					}
+				],
+				"x-rate-limit-cost": 1,
+				"parameters": [
+					{
+						"name": "limit",
+						"in": "query",
+						"required": false,
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"description": "Rows per page, 1 to 1000",
+							"default": 100,
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 1000
+						}
+					},
+					{
+						"name": "iterator",
+						"in": "query",
+						"required": false,
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"description": "Opaque cursor from a previous response. Omit for the first page",
+							"type": "string",
+							"minLength": 1
+						}
+					},
+					{
+						"name": "updated_since",
+						"in": "query",
+						"required": false,
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"description": "Only rows updated on or after this date",
+							"type": "string",
+							"minLength": 1
+						}
+					},
+					{
+						"name": "added_since",
+						"in": "query",
+						"required": false,
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"description": "Only rows added on or after this date",
+							"type": "string",
+							"minLength": 1
+						}
+					},
+					{
+						"name": "segment_id",
+						"in": "query",
+						"required": false,
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"description": "Only companies currently in this segment",
+							"type": "string",
+							"format": "uuid",
+							"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$"
+						}
+					},
+					{
+						"name": "data_points",
+						"in": "query",
+						"required": false,
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"description": "fieldNames of the data points to return, from the data points list. The identifying data points always come back. Omit for every data point; [\"*\"] also means every one; [] means only the identifying data points",
+							"anyOf": [
+								{
+									"maxItems": 200,
+									"type": "array",
+									"items": {
+										"type": "string",
+										"minLength": 1,
+										"maxLength": 200
+									}
+								},
+								{
+									"type": "string",
+									"minLength": 1,
+									"maxLength": 200
+								}
+							]
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "List companies",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"companies": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"properties": {
+													"__company_id": {
+														"type": "string"
+													},
+													"__added_at": {
+														"type": "string"
+													},
+													"__updated_at": {
+														"type": "string"
+													}
+												},
+												"required": [
+													"__company_id",
+													"__added_at",
+													"__updated_at"
+												],
+												"additionalProperties": {}
+											}
+										},
+										"totalCompanies": {
+											"type": "integer",
+											"minimum": 0,
+											"maximum": 9007199254740991
+										},
+										"nextIterator": {
+											"description": "Pass as `iterator` to fetch the next page. Null on the last page",
+											"anyOf": [
+												{
+													"type": "string"
+												},
+												{
+													"type": "null"
+												}
+											]
+										},
+										"hasMoreResults": {
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"companies",
+										"totalCompanies",
+										"nextIterator",
+										"hasMoreResults"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INVALID_REQUEST"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"UNAUTHENTICATED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"FORBIDDEN"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "No segment in your account has this segment_id",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"NOT_FOUND"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Too many requests",
+						"headers": {
+							"Retry-After": {
+								"description": "Seconds to wait before retrying",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"RATE_LIMITED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal server error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INTERNAL_ERROR"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/dataset/companies/fields": {
+			"get": {
+				"operationId": "dataset:listCompanyFields",
+				"summary": "List company data points",
+				"tags": [
+					"Companies"
+				],
+				"security": [
+					{
+						"apiKey": [
+							"CLIENT_DATA_API"
+						]
+					}
+				],
+				"x-rate-limit-cost": 1,
+				"responses": {
+					"200": {
+						"description": "List company data points",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"fields": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"properties": {
+													"fieldName": {
+														"description": "Name to use in filters and in the response body",
+														"type": "string"
+													},
+													"displayName": {
+														"description": "The name shown in the Goodfit app",
+														"type": "string"
+													},
+													"fieldType": {
+														"type": "string",
+														"enum": [
+															"String",
+															"Picklist",
+															"Number",
+															"Percentage",
+															"Currency",
+															"Date",
+															"Boolean",
+															"Multipicklist",
+															"Array",
+															"Integer"
+														]
+													},
+													"operators": {
+														"description": "Operators accepted for this data point in POST /companies/search",
+														"type": "array",
+														"items": {
+															"description": "Comparison applied to the data point",
+															"type": "string",
+															"enum": [
+																"exists",
+																"notExists",
+																"stringEqualOneOf",
+																"stringNotEqualOneOf",
+																"stringContainsOneOf",
+																"stringNotContainsOneOf",
+																"equalTo",
+																"notEqualTo",
+																"gt",
+																"gte",
+																"lt",
+																"lte",
+																"between",
+																"booleanTrue",
+																"booleanFalse",
+																"booleanFalseOrNull",
+																"arrayContainsAnyOf",
+																"arrayNotContainsAnyOf",
+																"arrayContainsAnySubstring",
+																"arrayNotContainsAnySubstring",
+																"arrayLengthGt",
+																"arrayLengthGte",
+																"arrayLengthLt",
+																"arrayLengthLte",
+																"dateEqual",
+																"dateNotEqual",
+																"dateSince",
+																"dateBefore",
+																"dateBetween",
+																"dateSinceRelative",
+																"dateBeforeRelative"
+															]
+														}
+													},
+													"description": {
+														"anyOf": [
+															{
+																"type": "string"
+															},
+															{
+																"type": "null"
+															}
+														]
+													},
+													"isIntel": {
+														"description": "Whether this is intel: a data point answering a higher-level question, e.g. \"Sells to enterprises?\"",
+														"type": "boolean"
+													}
+												},
+												"required": [
+													"fieldName",
+													"displayName",
+													"fieldType",
+													"operators",
+													"description",
+													"isIntel"
+												],
+												"additionalProperties": false
+											}
+										}
+									},
+									"required": [
+										"fields"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"UNAUTHENTICATED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"FORBIDDEN"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Too many requests",
+						"headers": {
+							"Retry-After": {
+								"description": "Seconds to wait before retrying",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"RATE_LIMITED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal server error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INTERNAL_ERROR"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/dataset/contacts/fields": {
+			"get": {
+				"operationId": "dataset:listContactFields",
+				"summary": "List contact data points",
+				"tags": [
+					"Contacts"
+				],
+				"security": [
+					{
+						"apiKey": [
+							"CLIENT_DATA_API"
+						]
+					}
+				],
+				"x-rate-limit-cost": 1,
+				"responses": {
+					"200": {
+						"description": "List contact data points",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"fields": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"properties": {
+													"fieldName": {
+														"type": "string"
+													},
+													"displayName": {
+														"description": "The name shown in the Goodfit app",
+														"type": "string"
+													},
+													"fieldType": {
+														"type": "string",
+														"enum": [
+															"String",
+															"Picklist",
+															"Number",
+															"Percentage",
+															"Currency",
+															"Date",
+															"Boolean",
+															"Multipicklist",
+															"Array",
+															"Integer"
+														]
+													},
+													"description": {
+														"anyOf": [
+															{
+																"type": "string"
+															},
+															{
+																"type": "null"
+															}
+														]
+													}
+												},
+												"required": [
+													"fieldName",
+													"displayName",
+													"fieldType",
+													"description"
+												],
+												"additionalProperties": false
+											}
+										}
+									},
+									"required": [
+										"fields"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"UNAUTHENTICATED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"FORBIDDEN"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Too many requests",
+						"headers": {
+							"Retry-After": {
+								"description": "Seconds to wait before retrying",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"RATE_LIMITED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal server error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INTERNAL_ERROR"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/dataset/contacts": {
+			"get": {
+				"operationId": "dataset:listContacts",
+				"summary": "List contacts",
+				"tags": [
+					"Contacts"
+				],
+				"security": [
+					{
+						"apiKey": [
+							"CLIENT_DATA_API"
+						]
+					}
+				],
+				"x-rate-limit-cost": 1,
+				"parameters": [
+					{
+						"name": "limit",
+						"in": "query",
+						"required": false,
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"description": "Rows per page, 1 to 1000",
+							"default": 100,
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 1000
+						}
+					},
+					{
+						"name": "iterator",
+						"in": "query",
+						"required": false,
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"description": "Opaque cursor from a previous response. Omit for the first page",
+							"type": "string",
+							"minLength": 1
+						}
+					},
+					{
+						"name": "updated_since",
+						"in": "query",
+						"required": false,
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"description": "Only rows updated on or after this date",
+							"type": "string",
+							"minLength": 1
+						}
+					},
+					{
+						"name": "added_since",
+						"in": "query",
+						"required": false,
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"description": "Only rows added on or after this date",
+							"type": "string",
+							"minLength": 1
+						}
+					},
+					{
+						"name": "company_id",
+						"in": "query",
+						"required": false,
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"description": "Restrict to contacts at one company",
+							"type": "string",
+							"minLength": 1
+						}
+					},
+					{
+						"name": "company_domain",
+						"in": "query",
+						"required": false,
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"description": "Restrict to contacts at the company with this domain",
+							"type": "string",
+							"minLength": 1
+						}
+					},
+					{
+						"name": "data_points",
+						"in": "query",
+						"required": false,
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"description": "fieldNames of the data points to return, from the data points list. The identifying data points always come back. Omit for every data point; [\"*\"] also means every one; [] means only the identifying data points",
+							"anyOf": [
+								{
+									"maxItems": 200,
+									"type": "array",
+									"items": {
+										"type": "string",
+										"minLength": 1,
+										"maxLength": 200
+									}
+								},
+								{
+									"type": "string",
+									"minLength": 1,
+									"maxLength": 200
+								}
+							]
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "List contacts",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"contacts": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"properties": {
+													"__id": {
+														"type": "string"
+													},
+													"__company_id": {
+														"type": "string"
+													}
+												},
+												"required": [
+													"__id",
+													"__company_id"
+												],
+												"additionalProperties": {}
+											}
+										},
+										"totalContacts": {
+											"type": "integer",
+											"minimum": 0,
+											"maximum": 9007199254740991
+										},
+										"nextIterator": {
+											"description": "Pass as `iterator` to fetch the next page. Null on the last page",
+											"anyOf": [
+												{
+													"type": "string"
+												},
+												{
+													"type": "null"
+												}
+											]
+										},
+										"hasMoreResults": {
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"contacts",
+										"totalContacts",
+										"nextIterator",
+										"hasMoreResults"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INVALID_REQUEST"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"UNAUTHENTICATED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"FORBIDDEN"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Too many requests",
+						"headers": {
+							"Retry-After": {
+								"description": "Seconds to wait before retrying",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"RATE_LIMITED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal server error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INTERNAL_ERROR"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/dataset/exports": {
+			"get": {
+				"operationId": "dataset:listExports",
+				"summary": "List recent exports",
+				"description": "The 25 most recent exports, newest first. Exports older than 30 days are omitted.",
+				"tags": [
+					"Exports"
+				],
+				"security": [
+					{
+						"apiKey": [
+							"CLIENT_DATA_API"
+						]
+					}
+				],
+				"x-rate-limit-cost": 1,
+				"responses": {
+					"200": {
+						"description": "List recent exports",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"exports": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"properties": {
+													"id": {
+														"type": "string",
+														"format": "uuid",
+														"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$"
+													},
+													"status": {
+														"type": "string",
+														"enum": [
+															"WAITING",
+															"PROCESSING",
+															"COMPLETE",
+															"FAILED"
+														]
+													},
+													"type": {
+														"type": "string"
+													},
+													"exportName": {
+														"anyOf": [
+															{
+																"type": "string"
+															},
+															{
+																"type": "null"
+															}
+														]
+													},
+													"requestedByUserEmail": {
+														"anyOf": [
+															{
+																"type": "string"
+															},
+															{
+																"type": "null"
+															}
+														]
+													},
+													"exportConfig": {
+														"anyOf": [
+															{
+																"type": "object",
+																"properties": {
+																	"filters": {
+																		"description": "Restricts the company rows exported. Contacts follow those companies",
+																		"examples": [
+																			{
+																				"id": "root",
+																				"combinator": "and",
+																				"rules": [
+																					{
+																						"id": "r1",
+																						"field": "__match_sourcing_criteria",
+																						"operator": "booleanTrue"
+																					}
+																				]
+																			}
+																		]
+																	},
+																	"columns": {
+																		"description": "fieldNames of the company data points in companies.csv. Defaults to all of them",
+																		"anyOf": [
+																			{
+																				"type": "array",
+																				"items": {
+																					"type": "string"
+																				}
+																			},
+																			{
+																				"type": "null"
+																			}
+																		]
+																	}
+																},
+																"additionalProperties": false
+															},
+															{
+																"type": "null"
+															}
+														]
+													},
+													"parts": {
+														"anyOf": [
+															{
+																"type": "array",
+																"items": {
+																	"type": "object",
+																	"properties": {
+																		"filename": {
+																			"type": "string"
+																		}
+																	},
+																	"required": [
+																		"filename"
+																	],
+																	"additionalProperties": false
+																}
+															},
+															{
+																"type": "null"
+															}
+														]
+													},
+													"completedAt": {
+														"anyOf": [
+															{
+																"type": "string"
+															},
+															{
+																"type": "null"
+															}
+														]
+													},
+													"createdAt": {
+														"type": "string"
+													},
+													"updatedAt": {
+														"type": "string"
+													},
+													"isExpired": {
+														"description": "Exports older than 30 days have had their files deleted",
+														"type": "boolean"
+													}
+												},
+												"required": [
+													"id",
+													"status",
+													"type",
+													"exportName",
+													"requestedByUserEmail",
+													"exportConfig",
+													"parts",
+													"completedAt",
+													"createdAt",
+													"updatedAt",
+													"isExpired"
+												],
+												"additionalProperties": false
+											}
+										}
+									},
+									"required": [
+										"exports"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"UNAUTHENTICATED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"FORBIDDEN"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Too many requests",
+						"headers": {
+							"Retry-After": {
+								"description": "Seconds to wait before retrying",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"RATE_LIMITED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal server error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INTERNAL_ERROR"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					}
+				}
+			},
+			"post": {
+				"operationId": "dataset:startExport",
+				"summary": "Start an export",
+				"description": "Exports run asynchronously. Poll GET /exports/{exportId} until the status is COMPLETE.",
+				"tags": [
+					"Exports"
+				],
+				"security": [
+					{
+						"apiKey": [
+							"CLIENT_DATA_API"
+						]
+					}
+				],
+				"x-rate-limit-cost": 1,
+				"requestBody": {
+					"required": false,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$schema": "https://json-schema.org/draft/2020-12/schema",
+								"type": "object",
+								"properties": {
+									"requestedByUserEmail": {
+										"description": "Shown in the Goodfit web app against this export",
+										"type": "string"
+									},
+									"exportConfig": {
+										"default": {},
+										"type": "object",
+										"properties": {
+											"filters": {
+												"description": "Restricts the company rows exported. Contacts follow those companies",
+												"examples": [
+													{
+														"id": "root",
+														"combinator": "and",
+														"rules": [
+															{
+																"id": "r1",
+																"field": "__match_sourcing_criteria",
+																"operator": "booleanTrue"
+															}
+														]
+													}
+												]
+											},
+											"columns": {
+												"description": "fieldNames of the company data points in companies.csv. Defaults to all of them",
+												"anyOf": [
+													{
+														"type": "array",
+														"items": {
+															"type": "string"
+														}
+													},
+													{
+														"type": "null"
+													}
+												]
+											}
+										}
+									},
+									"exportName": {
+										"type": "string"
+									}
+								}
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "Start an export",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"id": {
+											"type": "string",
+											"format": "uuid",
+											"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$"
+										},
+										"status": {
+											"type": "string",
+											"enum": [
+												"WAITING",
+												"PROCESSING",
+												"COMPLETE",
+												"FAILED"
+											]
+										},
+										"type": {
+											"type": "string"
+										},
+										"exportName": {
+											"anyOf": [
+												{
+													"type": "string"
+												},
+												{
+													"type": "null"
+												}
+											]
+										},
+										"requestedByUserEmail": {
+											"anyOf": [
+												{
+													"type": "string"
+												},
+												{
+													"type": "null"
+												}
+											]
+										},
+										"exportConfig": {
+											"anyOf": [
+												{
+													"type": "object",
+													"properties": {
+														"filters": {
+															"description": "Restricts the company rows exported. Contacts follow those companies",
+															"examples": [
+																{
+																	"id": "root",
+																	"combinator": "and",
+																	"rules": [
+																		{
+																			"id": "r1",
+																			"field": "__match_sourcing_criteria",
+																			"operator": "booleanTrue"
+																		}
+																	]
+																}
+															]
+														},
+														"columns": {
+															"description": "fieldNames of the company data points in companies.csv. Defaults to all of them",
+															"anyOf": [
+																{
+																	"type": "array",
+																	"items": {
+																		"type": "string"
+																	}
+																},
+																{
+																	"type": "null"
+																}
+															]
+														}
+													},
+													"additionalProperties": false
+												},
+												{
+													"type": "null"
+												}
+											]
+										},
+										"parts": {
+											"anyOf": [
+												{
+													"type": "array",
+													"items": {
+														"type": "object",
+														"properties": {
+															"filename": {
+																"type": "string"
+															}
+														},
+														"required": [
+															"filename"
+														],
+														"additionalProperties": false
+													}
+												},
+												{
+													"type": "null"
+												}
+											]
+										},
+										"completedAt": {
+											"anyOf": [
+												{
+													"type": "string"
+												},
+												{
+													"type": "null"
+												}
+											]
+										},
+										"createdAt": {
+											"type": "string"
+										},
+										"updatedAt": {
+											"type": "string"
+										},
+										"isExpired": {
+											"description": "Exports older than 30 days have had their files deleted",
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"id",
+										"status",
+										"type",
+										"exportName",
+										"requestedByUserEmail",
+										"exportConfig",
+										"parts",
+										"completedAt",
+										"createdAt",
+										"updatedAt"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INVALID_REQUEST"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"UNAUTHENTICATED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"FORBIDDEN"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Too many requests",
+						"headers": {
+							"Retry-After": {
+								"description": "Seconds to wait before retrying",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"RATE_LIMITED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal server error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INTERNAL_ERROR"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/dataset/segments/preview": {
+			"post": {
+				"operationId": "dataset:previewSegment",
+				"summary": "Preview a segment",
+				"description": "How many companies a segment with these criteria would hold, without saving it. `sample` returns up to that many of those companies too.",
+				"tags": [
+					"Segments"
+				],
+				"security": [
+					{
+						"apiKey": [
+							"CLIENT_DATA_API"
+						]
+					}
+				],
+				"x-rate-limit-cost": 1,
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$schema": "https://json-schema.org/draft/2020-12/schema",
+								"type": "object",
+								"properties": {
+									"filters": {
+										"description": "Filter group over your dataset’s data points, in the same format as company search. List the data points first (dataset_list_company_fields, or GET /companies/fields)",
+										"examples": [
+											{
+												"id": "root",
+												"combinator": "and",
+												"rules": [
+													{
+														"id": "r1",
+														"field": "__match_sourcing_criteria",
+														"operator": "booleanTrue"
+													}
+												]
+											}
+										],
+										"type": "object",
+										"properties": {},
+										"additionalProperties": {}
+									},
+									"excludeDomains": {
+										"description": "Companies left out whatever the filters say",
+										"default": [],
+										"maxItems": 10000,
+										"type": "array",
+										"items": {
+											"type": "string",
+											"minLength": 1,
+											"maxLength": 253
+										}
+									},
+									"companyLimit": {
+										"default": null,
+										"anyOf": [
+											{
+												"description": "Caps the segment at a number of companies, keeping the first by orderBy",
+												"type": "object",
+												"properties": {
+													"max": {
+														"description": "At most this many companies are included",
+														"type": "integer",
+														"exclusiveMinimum": 0,
+														"maximum": 9007199254740991
+													},
+													"orderBy": {
+														"description": "fieldName of the data point that decides which companies stay",
+														"type": "string",
+														"minLength": 1
+													},
+													"orderDirection": {
+														"type": "string",
+														"enum": [
+															"ASC",
+															"DESC"
+														]
+													}
+												},
+												"required": [
+													"max"
+												]
+											},
+											{
+												"type": "null"
+											}
+										]
+									},
+									"sample": {
+										"description": "Companies to return, 0 to 50",
+										"default": 0,
+										"type": "integer",
+										"minimum": 0,
+										"maximum": 50
+									}
+								},
+								"required": [
+									"filters"
+								]
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "Preview a segment",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"sizeCompanies": {
+											"type": "integer",
+											"minimum": 0,
+											"maximum": 9007199254740991
+										},
+										"companies": {
+											"description": "Identifying data points only",
+											"type": "array",
+											"items": {
+												"type": "object",
+												"propertyNames": {
+													"type": "string"
+												},
+												"additionalProperties": {}
+											}
+										}
+									},
+									"required": [
+										"sizeCompanies",
+										"companies"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INVALID_REQUEST"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"UNAUTHENTICATED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"FORBIDDEN"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Too many requests",
+						"headers": {
+							"Retry-After": {
+								"description": "Seconds to wait before retrying",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"RATE_LIMITED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal server error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INTERNAL_ERROR"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/dataset/segments/{segmentId}/refresh": {
+			"post": {
+				"operationId": "dataset:refreshSegment",
+				"summary": "Refresh a segment",
+				"description": "Recalculates the companies and searches again for contacts for each persona on the segment, in the background (202): poll GET /segments/{segmentId} until it is READY. Each contact newly granted to your account costs one contact credit. A segment never calculated, or whose last calculation failed, is recalculated instead, which spends nothing.",
+				"tags": [
+					"Segments"
+				],
+				"security": [
+					{
+						"apiKey": [
+							"CLIENT_DATA_API"
+						]
+					}
+				],
+				"x-rate-limit-cost": 1,
+				"parameters": [
+					{
+						"name": "segmentId",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"description": "The segment id",
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"202": {
+						"description": "Refreshing",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"segment": {
+											"type": "object",
+											"properties": {
+												"id": {
+													"type": "string",
+													"format": "uuid",
+													"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$"
+												},
+												"name": {
+													"type": "string"
+												},
+												"isDynamic": {
+													"description": "A dynamic segment refreshes after every dataset sync",
+													"type": "boolean"
+												},
+												"status": {
+													"description": "NEW: companies never calculated. UPDATING: recalculating companies after a criteria change. REFRESHING: recalculating companies and searching for contacts. READY: up to date. FAILED: the last calculation or refresh failed; companies from the last good run stay listed",
+													"type": "string",
+													"enum": [
+														"NEW",
+														"UPDATING",
+														"REFRESHING",
+														"READY",
+														"FAILED"
+													]
+												},
+												"sizeCompanies": {
+													"description": "Companies in the segment. Null until first calculated",
+													"anyOf": [
+														{
+															"type": "integer",
+															"minimum": -9007199254740991,
+															"maximum": 9007199254740991
+														},
+														{
+															"type": "null"
+														}
+													]
+												},
+												"sizeContacts": {
+													"anyOf": [
+														{
+															"type": "integer",
+															"minimum": -9007199254740991,
+															"maximum": 9007199254740991
+														},
+														{
+															"type": "null"
+														}
+													]
+												},
+												"lastRefreshedAt": {
+													"anyOf": [
+														{
+															"type": "string"
+														},
+														{
+															"type": "null"
+														}
+													]
+												},
+												"createdAt": {
+													"type": "string"
+												},
+												"updatedAt": {
+													"type": "string"
+												},
+												"filters": {},
+												"excludeDomains": {
+													"type": "array",
+													"items": {
+														"type": "string"
+													}
+												},
+												"companyLimit": {
+													"anyOf": [
+														{
+															"description": "Caps the segment at a number of companies, keeping the first by orderBy",
+															"type": "object",
+															"properties": {
+																"max": {
+																	"description": "At most this many companies are included",
+																	"type": "integer",
+																	"exclusiveMinimum": 0,
+																	"maximum": 9007199254740991
+																},
+																"orderBy": {
+																	"description": "fieldName of the data point that decides which companies stay",
+																	"type": "string",
+																	"minLength": 1
+																},
+																"orderDirection": {
+																	"type": "string",
+																	"enum": [
+																		"ASC",
+																		"DESC"
+																	]
+																}
+															},
+															"required": [
+																"max"
+															],
+															"additionalProperties": false
+														},
+														{
+															"type": "null"
+														}
+													]
+												}
+											},
+											"required": [
+												"id",
+												"name",
+												"isDynamic",
+												"status",
+												"sizeCompanies",
+												"sizeContacts",
+												"lastRefreshedAt",
+												"createdAt",
+												"updatedAt",
+												"filters",
+												"excludeDomains",
+												"companyLimit"
+											],
+											"additionalProperties": false
+										}
+									},
+									"required": [
+										"segment"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INVALID_REQUEST"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"UNAUTHENTICATED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"FORBIDDEN"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "No segment with this id exists for your account",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"NOT_FOUND"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "The segment is already updating or refreshing",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"CONFLICT"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Too many requests",
+						"headers": {
+							"Retry-After": {
+								"description": "Seconds to wait before retrying",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"RATE_LIMITED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal server error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INTERNAL_ERROR"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/dataset/companies/search": {
+			"post": {
+				"operationId": "dataset:searchCompanies",
+				"summary": "Search companies",
+				"tags": [
+					"Companies"
+				],
+				"security": [
+					{
+						"apiKey": [
+							"CLIENT_DATA_API"
+						]
+					}
+				],
+				"x-rate-limit-cost": 1,
+				"requestBody": {
+					"required": false,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$schema": "https://json-schema.org/draft/2020-12/schema",
+								"type": "object",
+								"properties": {
+									"filters": {
+										"description": "Filter group over the data points listed by GET /companies/fields",
+										"examples": [
+											{
+												"id": "root",
+												"combinator": "and",
+												"rules": [
+													{
+														"id": "r1",
+														"field": "__match_sourcing_criteria",
+														"operator": "booleanTrue"
+													}
+												]
+											}
+										]
+									},
+									"limit": {
+										"default": 100,
+										"type": "integer",
+										"minimum": 1,
+										"maximum": 1000
+									},
+									"iterator": {
+										"type": "string"
+									},
+									"data_points": {
+										"description": "fieldNames of the data points to return, from the data points list. The identifying data points always come back. Omit for every data point; [\"*\"] also means every one; [] means only the identifying data points",
+										"anyOf": [
+											{
+												"maxItems": 200,
+												"type": "array",
+												"items": {
+													"type": "string",
+													"minLength": 1,
+													"maxLength": 200
+												}
+											},
+											{
+												"type": "string",
+												"minLength": 1,
+												"maxLength": 200
+											}
+										]
+									}
+								},
+								"required": [
+									"filters"
+								]
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "Search companies",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"companies": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"propertyNames": {
+													"type": "string"
+												},
+												"additionalProperties": {}
+											}
+										},
+										"totalCompanies": {
+											"type": "integer",
+											"minimum": 0,
+											"maximum": 9007199254740991
+										},
+										"nextIterator": {
+											"anyOf": [
+												{
+													"type": "string"
+												},
+												{
+													"type": "null"
+												}
+											]
+										},
+										"hasMoreResults": {
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"companies",
+										"totalCompanies",
+										"nextIterator",
+										"hasMoreResults"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INVALID_REQUEST"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"UNAUTHENTICATED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"FORBIDDEN"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Too many requests",
+						"headers": {
+							"Retry-After": {
+								"description": "Seconds to wait before retrying",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"RATE_LIMITED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal server error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INTERNAL_ERROR"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}

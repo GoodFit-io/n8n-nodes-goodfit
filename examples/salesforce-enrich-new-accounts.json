@@ -1,0 +1,93 @@
+{
+	"name": "Goodfit: enrich new Salesforce accounts (hourly)",
+	"nodes": [
+		{
+			"parameters": {
+				"content": "## Enrich new Salesforce accounts\nEvery hour, sends each new account's **Website** to Goodfit with its Salesforce ID. Goodfit enriches the company and writes the data back through your Goodfit Salesforce sync.\n\n**Set up:** add Salesforce and Goodfit API credentials. Accounts without a website are skipped.",
+				"height": 200,
+				"width": 420
+			},
+			"id": "7501ccc8-75c4-4d0c-95e9-72bfb8513341",
+			"name": "Setup",
+			"type": "n8n-nodes-base.stickyNote",
+			"typeVersion": 1,
+			"position": [-80, -280]
+		},
+		{
+			"parameters": {
+				"triggerOn": "accountCreated",
+				"pollTimes": {
+					"item": [
+						{
+							"mode": "everyX",
+							"value": 1
+						}
+					]
+				}
+			},
+			"id": "0c1b5a5f-ae77-4ee1-8a07-c1b12e304ea8",
+			"name": "Every hour: new accounts",
+			"type": "n8n-nodes-base.salesforceTrigger",
+			"typeVersion": 1,
+			"position": [0, 0]
+		},
+		{
+			"parameters": {
+				"resource": "account",
+				"operation": "get",
+				"accountId": "={{ $json.Id }}"
+			},
+			"id": "067d44e1-532f-4220-bcf6-122cf607aa46",
+			"name": "Get account",
+			"type": "n8n-nodes-base.salesforce",
+			"typeVersion": 1,
+			"position": [220, 0]
+		},
+		{
+			"parameters": {
+				"resource": "company",
+				"operation": "enrich",
+				"identifyBy": "domain",
+				"domain": "={{ $json.Website }}",
+				"skipEmptyDomain": true,
+				"additionalFields": {
+					"salesforceId": "={{ $json.Id }}"
+				},
+				"waitForCompletion": false
+			},
+			"id": "a570f3d4-cb2e-41f2-88fb-79a00277bcd4",
+			"name": "Goodfit: enrich company",
+			"type": "n8n-nodes-goodfit.goodFit",
+			"typeVersion": 1,
+			"position": [440, 0],
+			"onError": "continueRegularOutput"
+		}
+	],
+	"connections": {
+		"Every hour: new accounts": {
+			"main": [
+				[
+					{
+						"node": "Get account",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Get account": {
+			"main": [
+				[
+					{
+						"node": "Goodfit: enrich company",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		}
+	},
+	"settings": {
+		"executionOrder": "v1"
+	}
+}

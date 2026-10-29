@@ -1,0 +1,1958 @@
+{
+	"openapi": "3.1.0",
+	"info": {
+		"title": "Goodfit Enrichment API",
+		"version": "1.0.0",
+		"description": "Add companies to your Goodfit dataset by domain, and contacts by LinkedIn URL, work email, or name and company, and check how each request resolved."
+	},
+	"servers": [
+		{
+			"url": "https://api.goodfit.io"
+		}
+	],
+	"tags": [
+		{
+			"name": "Company enrichment",
+			"x-page-title": "Company endpoints"
+		},
+		{
+			"name": "Contact enrichment",
+			"x-page-title": "Contact endpoints"
+		}
+	],
+	"components": {
+		"securitySchemes": {
+			"apiKey": {
+				"type": "apiKey",
+				"in": "header",
+				"name": "Authorization",
+				"description": "Your Goodfit API key, sent as the bare header value"
+			}
+		}
+	},
+	"security": [
+		{
+			"apiKey": []
+		}
+	],
+	"paths": {
+		"/enrichment/enrich": {
+			"post": {
+				"operationId": "enrichment:enrichCompany",
+				"summary": "Enrich a company",
+				"description": "Adds the company to your Goodfit dataset asynchronously. A company new to your dataset appears within minutes with its name, domain and LinkedIn URL, and its data points, scores and tags normally follow within minutes; segments arrive with your next daily dataset update. Poll GET /request/{requestId} with the returned id to see how the request resolved and, through dataStatus, when the company is filled in.",
+				"tags": [
+					"Company enrichment"
+				],
+				"security": [
+					{
+						"apiKey": [
+							"ENRICHMENT_API"
+						]
+					}
+				],
+				"x-rate-limit-cost": 1,
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$schema": "https://json-schema.org/draft/2020-12/schema",
+								"type": "object",
+								"properties": {
+									"domain": {
+										"type": "string",
+										"minLength": 1
+									},
+									"email": {
+										"description": "Used only to derive a domain. Personal providers rejected",
+										"type": "string",
+										"format": "email",
+										"pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+									},
+									"externalIds": {
+										"type": "object",
+										"properties": {
+											"salesforce": {
+												"type": "string"
+											},
+											"hubspot": {
+												"anyOf": [
+													{
+														"type": "string"
+													},
+													{
+														"type": "number"
+													}
+												]
+											}
+										}
+									},
+									"forceOverrideExternalIds": {
+										"type": "boolean"
+									},
+									"syncToCRM": {
+										"description": "Write the company to every connected CRM once its data points, scores and tags are filled in, or at once if it already is. Defaults to false",
+										"type": "boolean"
+									}
+								}
+							}
+						}
+					}
+				},
+				"responses": {
+					"201": {
+						"description": "The request is recorded and queued",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"success": {
+											"type": "boolean",
+											"const": true
+										},
+										"requestId": {
+											"type": "string",
+											"format": "uuid",
+											"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$"
+										}
+									},
+									"required": [
+										"success",
+										"requestId"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Neither a domain nor an email was given, or neither yields a business domain",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INVALID_REQUEST"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"UNAUTHENTICATED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"FORBIDDEN"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Too many requests",
+						"headers": {
+							"Retry-After": {
+								"description": "Seconds to wait before retrying",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"RATE_LIMITED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal server error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INTERNAL_ERROR"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/enrichment/enrich-contact/request": {
+			"post": {
+				"operationId": "enrichment:enrichContact",
+				"summary": "Enrich a contact",
+				"description": "Adds the person to your Goodfit dataset asynchronously. Identify them by linkedInUrl, workEmail, or firstName + lastName + companyDomain or companyName. Poll GET /enrich-contact/request/{requestId} with the returned id. A result offering employments or candidates is settled with POST /enrich-contact/request/{requestId}/resolve, or by resending with selectedCompanyId or selectedCandidateId. An identical request that is still in flight returns its id with a 200 instead.",
+				"tags": [
+					"Contact enrichment"
+				],
+				"security": [
+					{
+						"apiKey": [
+							"CONTACT_ENRICHMENT_API"
+						]
+					}
+				],
+				"x-rate-limit-cost": 1,
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$schema": "https://json-schema.org/draft/2020-12/schema",
+								"type": "object",
+								"properties": {
+									"identity": {
+										"type": "object",
+										"properties": {
+											"selectedCandidateId": {
+												"anyOf": [
+													{
+														"type": "string"
+													},
+													{
+														"type": "null"
+													}
+												]
+											},
+											"linkedInUrl": {
+												"anyOf": [
+													{
+														"type": "string"
+													},
+													{
+														"type": "null"
+													}
+												]
+											},
+											"companyName": {
+												"anyOf": [
+													{
+														"type": "string"
+													},
+													{
+														"type": "null"
+													}
+												]
+											},
+											"companyDomain": {
+												"anyOf": [
+													{
+														"type": "string"
+													},
+													{
+														"type": "null"
+													}
+												]
+											},
+											"workEmail": {
+												"anyOf": [
+													{
+														"type": "string"
+													},
+													{
+														"type": "null"
+													}
+												]
+											},
+											"firstName": {
+												"anyOf": [
+													{
+														"type": "string"
+													},
+													{
+														"type": "null"
+													}
+												]
+											},
+											"lastName": {
+												"anyOf": [
+													{
+														"type": "string"
+													},
+													{
+														"type": "null"
+													}
+												]
+											},
+											"jobTitle": {
+												"anyOf": [
+													{
+														"type": "string"
+													},
+													{
+														"type": "null"
+													}
+												]
+											},
+											"selectedCompanyId": {
+												"anyOf": [
+													{
+														"type": "string"
+													},
+													{
+														"type": "null"
+													}
+												]
+											}
+										}
+									},
+									"externalIds": {
+										"type": "object",
+										"properties": {
+											"salesforce": {
+												"anyOf": [
+													{
+														"anyOf": [
+															{
+																"type": "string"
+															},
+															{
+																"type": "number"
+															}
+														]
+													},
+													{
+														"type": "null"
+													}
+												]
+											},
+											"hubspot": {
+												"anyOf": [
+													{
+														"anyOf": [
+															{
+																"type": "string"
+															},
+															{
+																"type": "number"
+															}
+														]
+													},
+													{
+														"type": "null"
+													}
+												]
+											}
+										}
+									},
+									"enrichPhoneNumber": {
+										"default": false,
+										"type": "boolean"
+									},
+									"syncToCRM": {
+										"default": false,
+										"type": "boolean"
+									}
+								},
+								"required": [
+									"identity"
+								]
+							}
+						}
+					}
+				},
+				"responses": {
+					"201": {
+						"description": "The request is recorded and queued",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"requestId": {
+											"type": "string",
+											"format": "uuid",
+											"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$"
+										},
+										"status": {
+											"type": "string",
+											"enum": [
+												"QUEUED",
+												"IN_PROGRESS",
+												"ERROR",
+												"COMPLETE"
+											]
+										}
+									},
+									"required": [
+										"requestId",
+										"status"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "No LinkedIn URL, work email, or first name + last name + company was given, a field is malformed, selectedCandidateId was not offered for this contact, or an external id names a CRM that is not connected",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INVALID_REQUEST"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"UNAUTHENTICATED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"402": {
+						"description": "Out of contact credits, or of phone number credits when enrichPhoneNumber is set",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INSUFFICIENT_CREDITS"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"FORBIDDEN"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Too many requests",
+						"headers": {
+							"Retry-After": {
+								"description": "Seconds to wait before retrying",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"RATE_LIMITED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal server error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INTERNAL_ERROR"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/enrichment/enrich-contact/request/{requestId}": {
+			"get": {
+				"operationId": "enrichment:getContactEnrichmentRequest",
+				"summary": "Get a contact enrichment request",
+				"description": "result is present once the request is COMPLETE, and error once it is ERROR.",
+				"tags": [
+					"Contact enrichment"
+				],
+				"security": [
+					{
+						"apiKey": [
+							"CONTACT_ENRICHMENT_API"
+						]
+					}
+				],
+				"x-rate-limit-cost": 1,
+				"parameters": [
+					{
+						"name": "requestId",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"type": "string",
+							"format": "uuid",
+							"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Get a contact enrichment request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"requestId": {
+											"type": "string",
+											"format": "uuid",
+											"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$"
+										},
+										"status": {
+											"type": "string",
+											"enum": [
+												"QUEUED",
+												"IN_PROGRESS",
+												"ERROR",
+												"COMPLETE"
+											]
+										},
+										"error": {
+											"type": "string"
+										},
+										"inputs": {
+											"type": "object",
+											"properties": {
+												"selectedCandidateId": {
+													"type": "string"
+												},
+												"linkedInUrl": {
+													"type": "string"
+												},
+												"companyName": {
+													"type": "string"
+												},
+												"companyDomain": {
+													"type": "string"
+												},
+												"workEmail": {
+													"type": "string"
+												},
+												"firstName": {
+													"type": "string"
+												},
+												"lastName": {
+													"type": "string"
+												},
+												"jobTitle": {
+													"type": "string"
+												},
+												"selectedCompanyId": {
+													"type": "string"
+												}
+											},
+											"additionalProperties": false
+										},
+										"result": {
+											"type": "object",
+											"properties": {
+												"found": {
+													"type": "boolean"
+												},
+												"matchedBy": {
+													"type": "string",
+													"enum": [
+														"linkedInUrl",
+														"workEmail",
+														"crmRecord",
+														"name"
+													]
+												},
+												"reason": {
+													"description": "Why the contact was not added when `found` is false. A LinkedIn URL whose profile no longer exists returns `PERSON_NOT_FOUND`. Nothing is charged when `found` is false.",
+													"type": "string",
+													"enum": [
+														"PERSON_NOT_FOUND",
+														"MULTIPLE_EMPLOYMENTS_FOUND",
+														"NO_COMPANY_MATCH",
+														"NOT_ENOUGH_INFORMATION",
+														"COMPANY_HAS_NO_DOMAIN",
+														"COMPANY_RESOLUTION_CONFLICT",
+														"CONTACT_RESOLUTION_CONFLICT",
+														"CRM_RECORD_NOT_FOUND",
+														"NAME_NOT_FOUND_AT_COMPANY",
+														"COMPANY_DOMAIN_NOT_FOUND",
+														"COMPANY_NAME_NOT_FOUND",
+														"FORMER_EMPLOYEE",
+														"MULTIPLE_PEOPLE_FOUND"
+													]
+												},
+												"employments": {
+													"type": "array",
+													"items": {
+														"type": "object",
+														"properties": {
+															"companyId": {
+																"type": "string"
+															},
+															"companyName": {
+																"anyOf": [
+																	{
+																		"type": "string"
+																	},
+																	{
+																		"type": "null"
+																	}
+																]
+															},
+															"companyDomain": {
+																"anyOf": [
+																	{
+																		"type": "string"
+																	},
+																	{
+																		"type": "null"
+																	}
+																]
+															},
+															"jobTitle": {
+																"anyOf": [
+																	{
+																		"type": "string"
+																	},
+																	{
+																		"type": "null"
+																	}
+																]
+															},
+															"startDate": {
+																"anyOf": [
+																	{
+																		"type": "string"
+																	},
+																	{
+																		"type": "null"
+																	}
+																]
+															}
+														},
+														"required": [
+															"companyId",
+															"companyName",
+															"companyDomain",
+															"jobTitle",
+															"startDate"
+														],
+														"additionalProperties": false
+													}
+												},
+												"candidates": {
+													"type": "array",
+													"items": {
+														"type": "object",
+														"properties": {
+															"candidateId": {
+																"type": "string"
+															},
+															"firstName": {
+																"anyOf": [
+																	{
+																		"type": "string"
+																	},
+																	{
+																		"type": "null"
+																	}
+																]
+															},
+															"lastName": {
+																"anyOf": [
+																	{
+																		"type": "string"
+																	},
+																	{
+																		"type": "null"
+																	}
+																]
+															},
+															"jobTitle": {
+																"anyOf": [
+																	{
+																		"type": "string"
+																	},
+																	{
+																		"type": "null"
+																	}
+																]
+															},
+															"companyId": {
+																"type": "string"
+															},
+															"companyName": {
+																"anyOf": [
+																	{
+																		"type": "string"
+																	},
+																	{
+																		"type": "null"
+																	}
+																]
+															},
+															"companyDomain": {
+																"anyOf": [
+																	{
+																		"type": "string"
+																	},
+																	{
+																		"type": "null"
+																	}
+																]
+															},
+															"isFormerEmployment": {
+																"type": "boolean"
+															},
+															"linkedInUrl": {
+																"type": "string"
+															}
+														},
+														"required": [
+															"candidateId",
+															"firstName",
+															"lastName",
+															"jobTitle",
+															"companyId",
+															"companyName",
+															"companyDomain",
+															"isFormerEmployment",
+															"linkedInUrl"
+														],
+														"additionalProperties": false
+													}
+												},
+												"linkedInUrl": {
+													"type": "string"
+												},
+												"firstName": {
+													"type": "string"
+												},
+												"lastName": {
+													"type": "string"
+												},
+												"jobTitle": {
+													"type": "string"
+												},
+												"startDate": {
+													"type": "string"
+												},
+												"isFormerEmployment": {
+													"type": "boolean"
+												},
+												"workEmail": {
+													"anyOf": [
+														{
+															"type": "string",
+															"format": "email",
+															"pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+														},
+														{
+															"type": "string",
+															"const": "NOT_FOUND"
+														},
+														{
+															"type": "string",
+															"const": "SKIPPED_EX_EMPLOYEE"
+														}
+													]
+												},
+												"mobilePhone": {
+													"anyOf": [
+														{
+															"type": "string"
+														},
+														{
+															"type": "string",
+															"const": "NOT_FOUND"
+														},
+														{
+															"type": "string",
+															"const": "NOT_REQUESTED"
+														}
+													]
+												},
+												"personas": {
+													"default": [],
+													"type": "array",
+													"items": {
+														"type": "string"
+													}
+												},
+												"addedToDataset": {
+													"type": "boolean"
+												},
+												"syncedToCRM": {
+													"type": "boolean"
+												},
+												"syncFailureReason": {
+													"type": "string"
+												},
+												"company": {
+													"type": "object",
+													"properties": {
+														"companyId": {
+															"type": "string"
+														},
+														"linkedInUrl": {
+															"type": "string"
+														},
+														"name": {
+															"type": "string"
+														},
+														"domain": {
+															"type": "string"
+														},
+														"markets": {
+															"default": [],
+															"type": "array",
+															"items": {
+																"type": "string"
+															}
+														},
+														"addedToDataset": {
+															"type": "boolean"
+														},
+														"externalIds": {
+															"type": "object",
+															"properties": {
+																"salesforce": {
+																	"type": "string"
+																},
+																"hubspot": {
+																	"type": "string"
+																}
+															},
+															"additionalProperties": false
+														}
+													},
+													"required": [
+														"companyId",
+														"markets",
+														"addedToDataset"
+													],
+													"additionalProperties": false
+												},
+												"externalIds": {
+													"type": "object",
+													"properties": {
+														"salesforce": {
+															"type": "string"
+														},
+														"hubspot": {
+															"type": "string"
+														}
+													},
+													"additionalProperties": false
+												}
+											},
+											"required": [
+												"found",
+												"personas"
+											],
+											"additionalProperties": false
+										}
+									},
+									"required": [
+										"requestId",
+										"status",
+										"inputs"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INVALID_REQUEST"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"UNAUTHENTICATED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"FORBIDDEN"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "No contact enrichment request with this id exists for your account",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"NOT_FOUND"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Too many requests",
+						"headers": {
+							"Retry-After": {
+								"description": "Seconds to wait before retrying",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"RATE_LIMITED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal server error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INTERNAL_ERROR"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/enrichment/request/{requestId}": {
+			"get": {
+				"operationId": "enrichment:getEnrichmentRequest",
+				"summary": "Get an enrichment request",
+				"description": "isChargable is omitted while the request is Queued. dataStatus is BASIC while the company has only its name, domain and LinkedIn URL, and FULL once a build has filled in its data points, scores and tags.",
+				"tags": [
+					"Company enrichment"
+				],
+				"security": [
+					{
+						"apiKey": [
+							"ENRICHMENT_API"
+						]
+					}
+				],
+				"x-rate-limit-cost": 1,
+				"parameters": [
+					{
+						"name": "requestId",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"type": "string",
+							"format": "uuid",
+							"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Get an enrichment request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"requestId": {
+											"type": "string",
+											"format": "uuid",
+											"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$"
+										},
+										"inputs": {
+											"type": "object",
+											"properties": {
+												"domain": {
+													"type": "string"
+												},
+												"syncToCRM": {
+													"type": "boolean"
+												}
+											},
+											"required": [
+												"domain"
+											],
+											"additionalProperties": false
+										},
+										"status": {
+											"type": "string",
+											"enum": [
+												"Queued",
+												"Completed",
+												"Error",
+												"Skipped",
+												"Unknown"
+											]
+										},
+										"context": {
+											"anyOf": [
+												{
+													"type": "object",
+													"properties": {
+														"skipReason": {
+															"anyOf": [
+																{
+																	"type": "string",
+																	"enum": [
+																		"INVALID_DOMAIN",
+																		"BLACKLISTED_DOMAIN",
+																		"DOMAIN_NOT_LOADABLE",
+																		"DOMAIN_PARKED",
+																		"ID_RES_NO_COMPANY_ID",
+																		"ID_RES_NO_LINKEDIN_ID",
+																		"ID_RES_NO_LINKEDIN_RECORD",
+																		"SKIP_CREATE_CLIENT_DEST",
+																		"LINKEDIN_NOT_ACTIVE"
+																	]
+																},
+																{
+																	"type": "null"
+																}
+															]
+														},
+														"skipReasonDescription": {
+															"type": "string"
+														},
+														"errorMessage": {
+															"anyOf": [
+																{
+																	"type": "string"
+																},
+																{
+																	"type": "null"
+																}
+															]
+														},
+														"domainCheck": {
+															"anyOf": [
+																{
+																	"type": "object",
+																	"properties": {
+																		"domainLoads": {
+																			"anyOf": [
+																				{
+																					"type": "boolean"
+																				},
+																				{
+																					"type": "null"
+																				}
+																			]
+																		},
+																		"loadedUrl": {
+																			"anyOf": [
+																				{
+																					"type": "string"
+																				},
+																				{
+																					"type": "null"
+																				}
+																			]
+																		}
+																	},
+																	"additionalProperties": false
+																},
+																{
+																	"type": "null"
+																}
+															]
+														}
+													},
+													"additionalProperties": false
+												},
+												{
+													"type": "null"
+												}
+											]
+										},
+										"isChargable": {
+											"anyOf": [
+												{
+													"type": "boolean"
+												},
+												{
+													"type": "null"
+												}
+											]
+										},
+										"dataStatus": {
+											"description": "Only on a Completed request. BASIC while the company has just its name, domain and LinkedIn URL; FULL once a build has filled in its data points, scores and tags, normally within minutes",
+											"type": "string",
+											"enum": [
+												"BASIC",
+												"FULL"
+											]
+										}
+									},
+									"required": [
+										"requestId",
+										"inputs",
+										"status",
+										"context"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INVALID_REQUEST"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"UNAUTHENTICATED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"FORBIDDEN"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "No enrichment request with this id exists for your account",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"NOT_FOUND"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Too many requests",
+						"headers": {
+							"Retry-After": {
+								"description": "Seconds to wait before retrying",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"RATE_LIMITED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal server error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INTERNAL_ERROR"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/enrichment/enrich-contact/request/{requestId}/resolve": {
+			"post": {
+				"operationId": "enrichment:resolveContactEnrichmentRequest",
+				"summary": "Pick a person or employment",
+				"description": "Settles a COMPLETE contact enrichment that offered a choice: send selectedCandidateId for MULTIPLE_PEOPLE_FOUND, or selectedCompanyId for MULTIPLE_EMPLOYMENTS_FOUND. It enriches the one picked as a new request, with the original identity and options. Poll GET /enrich-contact/request/{requestId} with the returned id.",
+				"tags": [
+					"Contact enrichment"
+				],
+				"security": [
+					{
+						"apiKey": [
+							"CONTACT_ENRICHMENT_API"
+						]
+					}
+				],
+				"x-rate-limit-cost": 1,
+				"parameters": [
+					{
+						"name": "requestId",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"$schema": "https://json-schema.org/draft/2020-12/schema",
+							"type": "string",
+							"format": "uuid",
+							"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$"
+						}
+					}
+				],
+				"requestBody": {
+					"required": false,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$schema": "https://json-schema.org/draft/2020-12/schema",
+								"type": "object",
+								"properties": {
+									"selectedCandidateId": {
+										"description": "The candidateId picked from a MULTIPLE_PEOPLE_FOUND result",
+										"type": "string"
+									},
+									"selectedCompanyId": {
+										"description": "The companyId picked from a MULTIPLE_EMPLOYMENTS_FOUND result",
+										"type": "string"
+									}
+								}
+							}
+						}
+					}
+				},
+				"responses": {
+					"201": {
+						"description": "The person picked is recorded and queued",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"requestId": {
+											"type": "string",
+											"format": "uuid",
+											"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$"
+										},
+										"status": {
+											"type": "string",
+											"enum": [
+												"QUEUED",
+												"IN_PROGRESS",
+												"ERROR",
+												"COMPLETE"
+											]
+										}
+									},
+									"required": [
+										"requestId",
+										"status"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Not exactly one of selectedCandidateId and selectedCompanyId was sent, the id is not one this request offered, or the person picked has left the company",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INVALID_REQUEST"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"UNAUTHENTICATED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"402": {
+						"description": "Out of contact credits, or of phone number credits when the request asked for a phone number",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INSUFFICIENT_CREDITS"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"FORBIDDEN"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "No contact enrichment request with this id exists for your account",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"NOT_FOUND"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "The request has not finished, or did not end with a choice to make",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"CONFLICT"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Too many requests",
+						"headers": {
+							"Retry-After": {
+								"description": "Seconds to wait before retrying",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"RATE_LIMITED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal server error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INTERNAL_ERROR"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}

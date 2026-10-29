@@ -1,0 +1,276 @@
+{
+	"openapi": "3.1.0",
+	"info": {
+		"title": "Goodfit Organisation API",
+		"version": "1.0.0",
+		"description": "Credit balances and dataset limits for your account."
+	},
+	"servers": [
+		{
+			"url": "https://api.goodfit.io"
+		}
+	],
+	"components": {
+		"securitySchemes": {
+			"apiKey": {
+				"type": "apiKey",
+				"in": "header",
+				"name": "Authorization",
+				"description": "Your Goodfit API key, sent as the bare header value"
+			}
+		}
+	},
+	"security": [
+		{
+			"apiKey": []
+		}
+	],
+	"paths": {
+		"/organisation/credits": {
+			"get": {
+				"operationId": "organisation:getCredits",
+				"summary": "Get credit balances and dataset limits",
+				"description": "Credits are consumable balances spent on enrichment. Limits are ceilings on dataset size, each reported with its current usage. A null value means no limit is set.",
+				"tags": [
+					"Organisation"
+				],
+				"security": [
+					{
+						"apiKey": []
+					}
+				],
+				"x-rate-limit-cost": 1,
+				"responses": {
+					"200": {
+						"description": "Get credit balances and dataset limits",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"credits": {
+											"type": "object",
+											"properties": {
+												"contact": {
+													"anyOf": [
+														{
+															"type": "number"
+														},
+														{
+															"type": "null"
+														}
+													]
+												},
+												"phoneNumber": {
+													"anyOf": [
+														{
+															"type": "number"
+														},
+														{
+															"type": "null"
+														}
+													]
+												}
+											},
+											"required": [
+												"contact",
+												"phoneNumber"
+											],
+											"additionalProperties": false
+										},
+										"limits": {
+											"type": "object",
+											"properties": {
+												"companies": {
+													"type": "object",
+													"properties": {
+														"limit": {
+															"anyOf": [
+																{
+																	"type": "number"
+																},
+																{
+																	"type": "null"
+																}
+															]
+														},
+														"usage": {
+															"type": "number"
+														}
+													},
+													"required": [
+														"limit",
+														"usage"
+													],
+													"additionalProperties": false
+												},
+												"contacts": {
+													"type": "object",
+													"properties": {
+														"limit": {
+															"anyOf": [
+																{
+																	"type": "number"
+																},
+																{
+																	"type": "null"
+																}
+															]
+														},
+														"usage": {
+															"type": "number"
+														}
+													},
+													"required": [
+														"limit",
+														"usage"
+													],
+													"additionalProperties": false
+												}
+											},
+											"required": [
+												"companies",
+												"contacts"
+											],
+											"additionalProperties": false
+										}
+									},
+									"required": [
+										"credits",
+										"limits"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"UNAUTHENTICATED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"FORBIDDEN"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Too many requests",
+						"headers": {
+							"Retry-After": {
+								"description": "Seconds to wait before retrying",
+								"schema": {
+									"type": "integer"
+								}
+							}
+						},
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"RATE_LIMITED"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal server error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$schema": "https://json-schema.org/draft/2020-12/schema",
+									"type": "object",
+									"properties": {
+										"error": {
+											"description": "Human readable. Wording may change between releases",
+											"type": "string"
+										},
+										"code": {
+											"description": "Stable identifier. Match on this rather than on `error`",
+											"type": "string",
+											"enum": [
+												"INTERNAL_ERROR"
+											]
+										}
+									},
+									"required": [
+										"error",
+										"code"
+									],
+									"additionalProperties": false
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
