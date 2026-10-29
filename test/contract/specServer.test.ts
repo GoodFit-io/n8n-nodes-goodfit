@@ -20,16 +20,16 @@ describe('createSpecServer', () => {
 	});
 
 	it('reports a request body missing a required field', async () => {
-		const server = createSpecServer(() => ({ statusCode: 200, body: companyPage([], null) }));
+		const server = createSpecServer(() => ({ statusCode: 200, body: { sizeCompanies: 0, companies: [] } }));
 
 		await server.handle({
 			method: 'POST',
-			url: `${BASE_URL}/dataset/companies/search`,
-			body: { limit: 10 },
+			url: `${BASE_URL}/dataset/segments/preview`,
+			body: { sample: 2 },
 		});
 
 		expect(server.violations).toEqual([
-			"POST /dataset/companies/search: request body (root) must have required property 'filters'",
+			"POST /dataset/segments/preview: request body (root) must have required property 'filters'",
 		]);
 	});
 
