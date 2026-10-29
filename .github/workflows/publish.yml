@@ -42,6 +42,6 @@ jobs:
         run: npm run lint && npm run build
 
       - name: Stage the release
-        run: npm stage publish --provenance
+        run: npm stage publish --provenance --loglevel verbose
         env:
           RELEASE_MODE: 'true'
