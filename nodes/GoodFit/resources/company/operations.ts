@@ -56,15 +56,15 @@ async function enrich(this: IExecuteFunctions) {
 
 function wantsCompanyData(this: IExecuteFunctions, itemIndex: number, status: EnrichmentStatus) {
 	const includeCompanyData = this.getNodeParameter(
-		'includeCompanyData',
+		'options.includeCompanyData',
 		itemIndex,
-		false,
+		true,
 	) as boolean;
 	return includeCompanyData && status.status === COMPLETED;
 }
 
 function hasNothingToEnrich(this: IExecuteFunctions, itemIndex: number): boolean {
-	if (!(this.getNodeParameter('skipEmptyDomain', itemIndex, false) as boolean)) return false;
+	if (!(this.getNodeParameter('options.skipEmptyDomain', itemIndex, true) as boolean)) return false;
 	const identifyBy = this.getNodeParameter('identifyBy', itemIndex) as 'domain' | 'email';
 	return !String(this.getNodeParameter(identifyBy, itemIndex, '') ?? '').trim();
 }

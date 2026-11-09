@@ -11,6 +11,7 @@ import { criteriaFromParameters } from '../../shared/criteria';
 import { domainList, parseJsonParameter } from '../../shared/filters';
 import { asyncBatchOptions, type ResourceOperations } from '../../shared/operation';
 import { goodFitRequest } from '../../shared/transport';
+import { DEFAULT_PREVIEW_SAMPLE } from './description';
 
 type Segment = IDataObject & { id: string; status: string };
 
@@ -108,7 +109,7 @@ async function previewBody(this: IExecuteFunctions, itemIndex: number): Promise<
 	const additional = this.getNodeParameter('additionalFields', itemIndex, {}) as IDataObject;
 	return compact({
 		filters: await criteriaFromParameters.call(this, itemIndex, 'criteria'),
-		sample: this.getNodeParameter('sample', itemIndex, 0) as number,
+		sample: additional.sample ?? DEFAULT_PREVIEW_SAMPLE,
 		...sizeSettings(additional),
 	});
 }

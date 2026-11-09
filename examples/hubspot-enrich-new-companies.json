@@ -86,7 +86,6 @@
 				"operation": "enrich",
 				"identifyBy": "domain",
 				"domain": "={{ $json.properties.domain.value }}",
-				"skipEmptyDomain": true,
 				"additionalFields": {
 					"hubspotId": "={{ $json.companyId }}"
 				},

@@ -1,11 +1,13 @@
 import type { INodeProperties } from 'n8n-workflow';
 import {
 	ENRICHMENT_WAIT,
-	includeInputFieldsField,
+	includeInputFieldsOption,
+	optionsCollection,
 	paginationFields,
 	requestIdField,
 	sinceFilters,
-	waitForCompletionFields,
+	waitForCompletionField,
+	waitOptions,
 } from '../../shared/descriptions';
 import { criteriaFields } from '../../shared/criteria';
 
@@ -103,26 +105,7 @@ export const companyDescription: INodeProperties[] = [
 		displayOptions: { show: { ...forEnrich, identifyBy: ['email'] } },
 		description: 'A work email address. Personal email domains such as gmail.com are rejected.',
 	},
-	{
-		displayName: 'Skip Items Without a Domain',
-		name: 'skipEmptyDomain',
-		type: 'boolean',
-		default: true,
-		displayOptions: { show: forEnrich },
-		description:
-			'Whether to return items with an empty domain or email as Skipped, without calling Goodfit, instead of failing them',
-	},
-	includeInputFieldsField(forEnrich),
-	...waitForCompletionFields(forEnrich, ENRICHMENT_WAIT),
-	{
-		displayName: 'Include Company Data',
-		name: 'includeCompanyData',
-		type: 'boolean',
-		default: true,
-		displayOptions: { show: { ...forEnrich, waitForCompletion: [true] } },
-		description:
-			'Whether to fetch the company from your dataset once enriched. Needs an API key with Dataset API access.',
-	},
+	waitForCompletionField(forEnrich, ENRICHMENT_WAIT),
 	{
 		displayName: 'Additional Fields',
 		name: 'additionalFields',
@@ -154,6 +137,27 @@ export const companyDescription: INodeProperties[] = [
 			},
 		],
 	},
+	optionsCollection(forEnrich, [
+		{
+			displayName: 'Include Company Data',
+			name: 'includeCompanyData',
+			type: 'boolean',
+			default: true,
+			displayOptions: { show: { '/waitForCompletion': [true] } },
+			description:
+				'Whether to fetch the company from your dataset once enriched. Needs an API key with Dataset API access.',
+		},
+		includeInputFieldsOption,
+		{
+			displayName: 'Skip Items Without a Domain',
+			name: 'skipEmptyDomain',
+			type: 'boolean',
+			default: true,
+			description:
+				'Whether to return items with an empty domain or email as Skipped, without calling Goodfit, instead of failing them',
+		},
+		...waitOptions(ENRICHMENT_WAIT),
+	]),
 	requestIdField({ ...forCompany, operation: ['getEnrichmentStatus'] }),
 	...criteriaFields({
 		show: { ...forCompany, operation: ['search'] },

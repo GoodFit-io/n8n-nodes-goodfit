@@ -49,10 +49,13 @@ Each operation needs your key to have access to the matching Goodfit API:
   - You can link the company to a Salesforce or HubSpot record.
   - With **Wait for Completion** on (the default), the node waits for enrichment to finish and returns the company.
   - Turn it off to get the `requestId` straight away.
-  - **Skip Items Without a Domain** (on by default) returns items with an empty domain or email as `status: "Skipped"`
-    with `skipReason: "NO_DOMAIN"`, without calling Goodfit.
-  - **Include Input Fields** keeps the incoming item's fields in the output, such as a CRM record ID to write results
-    back to. Goodfit's fields win when names clash. Contact Enrich has this option too.
+  - Under **Options**:
+    - **Skip Items Without a Domain** (on by default) returns items with an empty domain or email as
+      `status: "Skipped"` with `skipReason: "NO_DOMAIN"`, without calling Goodfit.
+    - **Include Input Fields** keeps the incoming item's fields in the output, such as a CRM record ID to write results
+      back to. Goodfit's fields win when names clash. Contact Enrich and Resolve Match have this option too.
+    - **Include Company Data**, **Timeout** and **Poll Interval** control the wait (see
+      [Waiting for enrichment](#waiting-for-enrichment)).
 - **Get**: gets one company from your dataset by its exact domain.
 - **Get Many**: lists companies in your dataset. You can filter by **Added Since** or **Updated Since**, which is useful
   for incremental syncs.
@@ -78,10 +81,11 @@ Each operation needs your key to have access to the matching Goodfit API:
 
 ### Contact
 
-- **Enrich**: finds a contact's work email, and optionally their mobile number. Identify the contact by LinkedIn URL,
-  work email, or **First Name** + **Last Name** + **Company Domain** or **Company Name** (in Additional Fields). A
-  **Job Title** helps when several people share a name.
-  - You can have Goodfit sync the contact to your CRM.
+- **Enrich**: finds a contact's work email, and optionally their mobile number. Choose how to **Identify By**:
+  **LinkedIn URL**, **Work Email**, **Name and Company Domain**, or **Name and Company Name**. A **Job Title** (in
+  Additional Fields) helps when several people share a name.
+  - In Additional Fields, **Enrich Phone Number** also looks up a mobile number, and **Sync to CRM** has Goodfit sync
+    the contact to your CRM.
   - The result includes `found`, `workEmail`, `mobilePhone`, `jobTitle`, the contact's personas and their company.
 - **Get Data Points**: lists the contact data points in your dataset, with each one's type.
 - **Get Many**: lists contacts in your dataset, optionally for one company (`__company_id`).
@@ -109,8 +113,8 @@ dataset changes; a static one doesn't.
   as JSON). Optional: **Dynamic**, **Exclude Domains**, and **Max Companies** with **Order By** and **Order Direction**.
 - **Get**: gets one segment, with its criteria, status and size.
 - **Get Many**: lists your segments, newest first.
-- **Preview**: counts the companies some criteria (built the same way) would include, with a **Sample Size** of up to 50 of them, without
-  saving anything.
+- **Preview**: counts the companies some criteria (built the same way) would include, without saving anything. It
+  returns a sample of 10 of them; change **Sample Size** (up to 50) in Additional Fields.
 - **Refresh**: recalculates a segment's companies and searches again for contacts for its personas. Each newly granted
   contact uses a contact credit.
 - **Update**: changes only the **Update Fields** you choose. New criteria recalculate the segment.
@@ -118,7 +122,7 @@ dataset changes; a static one doesn't.
 
 Create, Refresh and Update calculate the segment in the background. With **Wait for Completion** on (the default), the
 node waits until the segment's `status` is `READY` or `FAILED`, the same way enrichment waits. A segment still
-calculating at the **Timeout** is returned with `timedOut: true`; check it later with **Segment → Get**.
+calculating at the **Timeout** (under **Options**) is returned with `timedOut: true`; check it later with **Segment → Get**.
 
 ### Credit
 
@@ -126,7 +130,8 @@ calculating at the **Timeout** is returned with `timedOut: true`; check it later
 
 ### Waiting for enrichment
 
-Enrichment runs in the background on Goodfit's side. When **Wait for Completion** is on, the node:
+Enrichment runs in the background on Goodfit's side. When **Wait for Completion** is on, the node does the following.
+**Poll Interval**, **Timeout** and **Include Company Data** are under **Options**.
 
 1. Checks every item's inputs, then submits them all.
 2. Checks all pending requests together every **Poll Interval** seconds. A status check that fails briefly is
