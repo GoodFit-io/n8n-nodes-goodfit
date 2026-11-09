@@ -91,38 +91,56 @@ function requiredText(
 	return text;
 }
 
+type ContactIdentifyBy =
+	'linkedInUrl' | 'workEmail' | 'nameAndCompanyDomain' | 'nameAndCompanyName';
+
+const IDENTIFIER_LABELS: Record<string, string> = {
+	linkedInUrl: 'LinkedIn URL',
+	workEmail: 'Work Email',
+	firstName: 'First Name',
+	lastName: 'Last Name',
+	companyDomain: 'Company Domain',
+	companyName: 'Company Name',
+};
+
+const IDENTIFIERS: Record<ContactIdentifyBy, string[]> = {
+	linkedInUrl: ['linkedInUrl'],
+	workEmail: ['workEmail'],
+	nameAndCompanyDomain: ['firstName', 'lastName', 'companyDomain'],
+	nameAndCompanyName: ['firstName', 'lastName', 'companyName'],
+};
+
+function chosenIdentifiers(this: IExecuteFunctions, itemIndex: number): IDataObject {
+	const identifyBy = this.getNodeParameter('identifyBy', itemIndex) as ContactIdentifyBy;
+	return Object.fromEntries(
+		IDENTIFIERS[identifyBy].map((parameter) => [
+			parameter,
+			requiredText.call(
+				this,
+				itemIndex,
+				parameter,
+				`Enter the contact’s ${IDENTIFIER_LABELS[parameter]}`,
+			),
+		]),
+	);
+}
+
 function enrichBody(this: IExecuteFunctions, itemIndex: number): IDataObject {
 	const additional = this.getNodeParameter('additionalFields', itemIndex, {}) as IDataObject;
 	const identity = compact({
-		linkedInUrl: this.getNodeParameter('linkedInUrl', itemIndex) as string,
-		workEmail: this.getNodeParameter('workEmail', itemIndex) as string,
-		firstName: additional.firstName,
-		lastName: additional.lastName,
 		jobTitle: additional.jobTitle,
 		companyName: additional.companyName,
 		companyDomain: additional.companyDomain,
 		selectedCompanyId: additional.selectedCompanyId,
 		selectedCandidateId: additional.selectedCandidateId,
+		...chosenIdentifiers.call(this, itemIndex),
 	});
-	if (!canIdentify(identity)) {
-		throw new NodeOperationError(
-			this.getNode(),
-			'Provide a LinkedIn URL, a work email, or a first name, last name and company',
-			{ itemIndex },
-		);
-	}
 	return compact({
 		identity,
 		externalIds: externalIdsFrom(additional),
-		enrichPhoneNumber: this.getNodeParameter('enrichPhoneNumber', itemIndex) as boolean,
-		syncToCRM: this.getNodeParameter('syncToCrm', itemIndex) as boolean,
+		enrichPhoneNumber: additional.enrichPhoneNumber ?? false,
+		syncToCRM: additional.syncToCrm ?? false,
 	});
-}
-
-function canIdentify(identity: IDataObject): boolean {
-	const named =
-		identity.firstName && identity.lastName && (identity.companyDomain || identity.companyName);
-	return Boolean(identity.linkedInUrl || identity.workEmail || named);
 }
 
 function fetchEnrichmentStatus(this: IExecuteFunctions, requestId: string, itemIndex?: number) {

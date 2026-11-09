@@ -55,7 +55,7 @@ function withInputFields(
 	itemIndex: number,
 ): IDataObject {
 	const includeInputFields = this.getNodeParameter(
-		'includeInputFields',
+		'options.includeInputFields',
 		itemIndex,
 		false,
 	) as boolean;

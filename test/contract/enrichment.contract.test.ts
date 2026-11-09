@@ -74,13 +74,19 @@ function contactEnrichmentApi({ method }: CapturedRequest) {
 	};
 }
 
-const waitBriefly = { waitForCompletion: true, timeoutSeconds: 10, pollIntervalSeconds: 2 };
+const waitBriefly = {
+	waitForCompletion: true,
+	options: { timeoutSeconds: 10, pollIntervalSeconds: 2 },
+};
+
+function withOptions<T extends { options: IDataObject }>(parameters: T, options: IDataObject): T {
+	return { ...parameters, options: { ...parameters.options, ...options } };
+}
 
 const enrichCompany = {
 	resource: 'company',
 	operation: 'enrich',
 	identifyBy: 'domain',
-	includeCompanyData: true,
 	additionalFields: {},
 	...waitBriefly,
 };
@@ -88,10 +94,8 @@ const enrichCompany = {
 const enrichContact = {
 	resource: 'contact',
 	operation: 'enrich',
+	identifyBy: 'linkedInUrl',
 	linkedInUrl: 'https://www.linkedin.com/in/example-person',
-	workEmail: '',
-	enrichPhoneNumber: false,
-	syncToCrm: false,
 	additionalFields: {},
 	...waitBriefly,
 };
@@ -160,7 +164,7 @@ describe('Contacts API contract', () => {
 
 	it('Contact → Enrich reports running out of credits against the item', async () => {
 		const run = await runNode({
-			parameters: { ...enrichContact, enrichPhoneNumber: true },
+			parameters: { ...enrichContact, additionalFields: { enrichPhoneNumber: true } },
 			continueOnFail: true,
 			respond: () => ({
 				statusCode: 402,
@@ -215,8 +219,7 @@ describe('Enrich across many items', () => {
 		const run = await runNode({
 			items,
 			parameters: {
-				...enrichCompany,
-				includeCompanyData: false,
+				...withOptions(enrichCompany, { includeCompanyData: false }),
 				identifyBy: (index: number) => (items[index].email ? 'email' : 'domain'),
 				email: (index: number) => items[index].email,
 				domain: (index: number) => items[index].domain,
@@ -261,9 +264,7 @@ describe('Enrich across many items', () => {
 		});
 
 		expect(run.requests).toEqual([]);
-		expect((run.error as Error).message).toBe(
-			'Provide a LinkedIn URL, a work email, or a first name, last name and company',
-		);
+		expect((run.error as Error).message).toBe('Enter the contact’s LinkedIn URL');
 		expect((run.error as { context: { itemIndex: number } }).context.itemIndex).toBe(1);
 	});
 
@@ -334,9 +335,7 @@ describe('Enrich options for CRM write-back flows', () => {
 		const run = await runNode({
 			items: accounts,
 			parameters: {
-				...enrichCompany,
-				skipEmptyDomain: true,
-				includeInputFields: true,
+				...withOptions(enrichCompany, { includeInputFields: true }),
 				domain: (index: number) => accounts[index].Website,
 			},
 			respond: enrichmentApiFor(() => 'Completed'),
@@ -355,7 +354,7 @@ describe('Enrich options for CRM write-back flows', () => {
 
 	it('fails an item without a domain when skipping is off', async () => {
 		const run = await runNode({
-			parameters: { ...enrichCompany, skipEmptyDomain: false, domain: '' },
+			parameters: { ...withOptions(enrichCompany, { skipEmptyDomain: false }), domain: '' },
 			respond: () => ({
 				statusCode: 400,
 				body: {
@@ -379,9 +378,7 @@ describe('Enrich options for CRM write-back flows', () => {
 		const run = await runNode({
 			items: accounts,
 			parameters: {
-				...enrichCompany,
-				includeCompanyData: false,
-				includeInputFields: true,
+				...withOptions(enrichCompany, { includeCompanyData: false, includeInputFields: true }),
 				domain: (index: number) => accounts[index].Website,
 			},
 			respond: enrichmentApiFor(() => 'Completed'),
@@ -399,9 +396,7 @@ describe('Enrich options for CRM write-back flows', () => {
 			items: [{ Id: '001A' }],
 			continueOnFail: true,
 			parameters: {
-				...enrichCompany,
-				skipEmptyDomain: false,
-				includeInputFields: true,
+				...withOptions(enrichCompany, { skipEmptyDomain: false, includeInputFields: true }),
 				domain: 'gmail.com',
 			},
 			respond: () => ({
@@ -422,7 +417,10 @@ describe('Enrich options for CRM write-back flows', () => {
 	it('leaves the output alone when input fields are not included', async () => {
 		const run = await runNode({
 			items: [{ Id: '001A' }],
-			parameters: { ...enrichCompany, includeCompanyData: false, domain: 'goodfit.io' },
+			parameters: {
+				...withOptions(enrichCompany, { includeCompanyData: false }),
+				domain: 'goodfit.io',
+			},
 			respond: enrichmentApiFor(() => 'Completed'),
 		});
 
@@ -483,7 +481,10 @@ describe('Resolving a contact with several employments', () => {
 
 		expect(run.violations).toEqual([]);
 		expect(run.requests[0].body).toMatchObject({
-			identity: { linkedInUrl: 'https://www.linkedin.com/in/example-person', selectedCompanyId: 'c-1' },
+			identity: {
+				linkedInUrl: 'https://www.linkedin.com/in/example-person',
+				selectedCompanyId: 'c-1',
+			},
 		});
 		expect(run.output[0]).toMatchObject({ result: { found: true } });
 	});
@@ -492,14 +493,11 @@ describe('Resolving a contact with several employments', () => {
 		const run = await runNode({
 			parameters: {
 				...enrichContact,
-				linkedInUrl: '',
-				workEmail: '',
-				additionalFields: {
-					firstName: 'Jane',
-					lastName: 'Doe',
-					companyDomain: 'goodfit.io',
-					jobTitle: 'Head of RevOps',
-				},
+				identifyBy: 'nameAndCompanyDomain',
+				firstName: 'Jane',
+				lastName: 'Doe',
+				companyDomain: 'goodfit.io',
+				additionalFields: { jobTitle: 'Head of RevOps' },
 			},
 			respond: contactEnrichmentApi,
 		});
@@ -515,21 +513,38 @@ describe('Resolving a contact with several employments', () => {
 		});
 	});
 
+	it('identifies a contact by name and company name', async () => {
+		const run = await runNode({
+			parameters: {
+				...enrichContact,
+				identifyBy: 'nameAndCompanyName',
+				firstName: 'Jane',
+				lastName: 'Doe',
+				companyName: 'Goodfit',
+			},
+			respond: contactEnrichmentApi,
+		});
+
+		expect(run.violations).toEqual([]);
+		expect(run.requests[0].body).toMatchObject({
+			identity: { firstName: 'Jane', lastName: 'Doe', companyName: 'Goodfit' },
+		});
+	});
+
 	it('rejects a name without a company before calling Goodfit', async () => {
 		const run = await runNode({
 			parameters: {
 				...enrichContact,
-				linkedInUrl: '',
-				workEmail: '',
-				additionalFields: { firstName: 'Jane', lastName: 'Doe' },
+				identifyBy: 'nameAndCompanyDomain',
+				firstName: 'Jane',
+				lastName: 'Doe',
+				companyDomain: '',
 			},
 			respond: contactEnrichmentApi,
 		});
 
 		expect(run.requests).toEqual([]);
-		expect((run.error as Error).message).toBe(
-			'Provide a LinkedIn URL, a work email, or a first name, last name and company',
-		);
+		expect((run.error as Error).message).toBe('Enter the contact’s Company Domain');
 	});
 });
 
@@ -631,7 +646,7 @@ describe('Contact → Resolve Match', () => {
 
 	it('keeps the input item’s fields when Include Input Fields is on', async () => {
 		const run = await runNode({
-			parameters: { ...resolveMatch, includeInputFields: true },
+			parameters: withOptions(resolveMatch, { includeInputFields: true }),
 			items: [{ crmId: 'lead-7' }],
 			respond: resolvingApi,
 		});

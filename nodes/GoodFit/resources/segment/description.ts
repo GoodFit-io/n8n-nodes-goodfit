@@ -1,7 +1,9 @@
 import type { INodeProperties } from 'n8n-workflow';
 import {
+	optionsCollection,
 	paginationFields,
-	waitForCompletionFields,
+	waitForCompletionField,
+	waitOptions,
 	type WaitWording,
 } from '../../shared/descriptions';
 import { criteriaFields } from '../../shared/criteria';
@@ -9,6 +11,8 @@ import { EXAMPLE_FILTERS } from '../../shared/filters';
 
 const forSegment = { resource: ['segment'] };
 const forOperations = (...operation: string[]) => ({ ...forSegment, operation });
+
+export const DEFAULT_PREVIEW_SAMPLE = 10;
 
 const SEGMENT_WAIT: WaitWording = { task: 'the segment calculation', checkWith: 'Segment → Get' };
 
@@ -141,15 +145,6 @@ export const segmentDescription: INodeProperties[] = [
 		jsonDescription: criteriaDescription,
 	}),
 	{
-		displayName: 'Sample Size',
-		name: 'sample',
-		type: 'number',
-		default: 10,
-		typeOptions: { minValue: 0, maxValue: 50 },
-		displayOptions: { show: forOperations('preview') },
-		description: 'How many of the matching companies to return with the count, up to 50',
-	},
-	{
 		displayName: 'Additional Fields',
 		name: 'additionalFields',
 		type: 'collection',
@@ -165,7 +160,17 @@ export const segmentDescription: INodeProperties[] = [
 		placeholder: 'Add Field',
 		default: {},
 		displayOptions: { show: forOperations('preview') },
-		options: sizeOptions,
+		options: [
+			...sizeOptions,
+			{
+				displayName: 'Sample Size',
+				name: 'sample',
+				type: 'number',
+				default: DEFAULT_PREVIEW_SAMPLE,
+				typeOptions: { minValue: 0, maxValue: 50 },
+				description: 'How many of the matching companies to return with the count, up to 50',
+			},
+		],
 	},
 	{
 		displayName: 'Update Fields',
@@ -195,6 +200,7 @@ export const segmentDescription: INodeProperties[] = [
 			...sizeOptions.slice(2),
 		],
 	},
-	...waitForCompletionFields(forOperations('create', 'refresh', 'update'), SEGMENT_WAIT),
+	waitForCompletionField(forOperations('create', 'refresh', 'update'), SEGMENT_WAIT),
+	optionsCollection(forOperations('create', 'refresh', 'update'), waitOptions(SEGMENT_WAIT)),
 	...paginationFields(forOperations('getAll')),
 ];

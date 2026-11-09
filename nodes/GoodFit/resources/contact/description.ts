@@ -1,16 +1,39 @@
 import type { INodeProperties } from 'n8n-workflow';
 import {
 	ENRICHMENT_WAIT,
-	includeInputFieldsField,
+	includeInputFieldsOption,
+	optionsCollection,
 	paginationFields,
 	requestIdField,
 	sinceFilters,
-	waitForCompletionFields,
+	waitForCompletionField,
+	waitOptions,
 } from '../../shared/descriptions';
 
 const forContact = { resource: ['contact'] };
 const forEnrich = { ...forContact, operation: ['enrich'] };
 const forResolve = { ...forContact, operation: ['resolveMatch'] };
+const NAME_MODES = ['nameAndCompanyDomain', 'nameAndCompanyName'];
+const identifiedBy = (...identifyBy: string[]) => ({ show: { ...forEnrich, identifyBy } });
+
+function identifierField(
+	displayName: string,
+	name: string,
+	identifyBy: string[],
+	extra: Partial<INodeProperties>,
+): INodeProperties {
+	return {
+		displayName,
+		name,
+		type: 'string',
+		required: true,
+		default: '',
+		displayOptions: identifiedBy(...identifyBy),
+		...extra,
+	};
+}
+
+const employmentHint = 'Helps pick the right employment when the person has several';
 
 export const contactDescription: INodeProperties[] = [
 	{
@@ -56,44 +79,36 @@ export const contactDescription: INodeProperties[] = [
 		default: 'enrich',
 	},
 	{
-		displayName: 'LinkedIn URL',
-		name: 'linkedInUrl',
-		type: 'string',
-		default: '',
+		displayName: 'Identify By',
+		name: 'identifyBy',
+		type: 'options',
+		options: [
+			{ name: 'LinkedIn URL', value: 'linkedInUrl' },
+			{ name: 'Work Email', value: 'workEmail' },
+			{ name: 'Name and Company Domain', value: 'nameAndCompanyDomain' },
+			{ name: 'Name and Company Name', value: 'nameAndCompanyName' },
+		],
+		default: 'linkedInUrl',
+		displayOptions: { show: forEnrich },
+	},
+	identifierField('LinkedIn URL', 'linkedInUrl', ['linkedInUrl'], {
 		placeholder: 'e.g. https://www.linkedin.com/in/example-person',
-		displayOptions: { show: forEnrich },
-		description:
-			'The contact’s LinkedIn profile URL. Provide this, a work email, or a first name, last name and company.',
-	},
-	{
-		displayName: 'Work Email',
-		name: 'workEmail',
-		type: 'string',
-		default: '',
+		description: 'The contact’s LinkedIn profile URL',
+	}),
+	identifierField('Work Email', 'workEmail', ['workEmail'], {
 		placeholder: 'name@email.com',
-		displayOptions: { show: forEnrich },
-		description:
-			'The contact’s work email. Provide this, a LinkedIn URL, or a first name, last name and company.',
-	},
-	{
-		displayName: 'Enrich Phone Number',
-		name: 'enrichPhoneNumber',
-		type: 'boolean',
-		default: false,
-		displayOptions: { show: forEnrich },
-		description:
-			'Whether to also look up a mobile number. Uses a phone number credit when one is found.',
-	},
-	{
-		displayName: 'Sync to CRM',
-		name: 'syncToCrm',
-		type: 'boolean',
-		default: false,
-		displayOptions: { show: forEnrich },
-		description: 'Whether Goodfit should sync the enriched contact to your connected CRM',
-	},
-	includeInputFieldsField(forEnrich),
-	...waitForCompletionFields(forEnrich, ENRICHMENT_WAIT),
+		description: 'The contact’s work email',
+	}),
+	identifierField('First Name', 'firstName', NAME_MODES, {}),
+	identifierField('Last Name', 'lastName', NAME_MODES, {}),
+	identifierField('Company Domain', 'companyDomain', ['nameAndCompanyDomain'], {
+		placeholder: 'e.g. goodfit.io',
+		description: 'The domain of the company the contact works at',
+	}),
+	identifierField('Company Name', 'companyName', ['nameAndCompanyName'], {
+		description: 'The name of the company the contact works at',
+	}),
+	waitForCompletionField(forEnrich, ENRICHMENT_WAIT),
 	{
 		displayName: 'Additional Fields',
 		name: 'additionalFields',
@@ -107,24 +122,24 @@ export const contactDescription: INodeProperties[] = [
 				name: 'companyDomain',
 				type: 'string',
 				default: '',
-				description:
-					'With a first and last name, identifies the contact. Otherwise helps pick the right employment.',
+				displayOptions: { hide: { '/identifyBy': NAME_MODES } },
+				description: employmentHint,
 			},
 			{
 				displayName: 'Company Name',
 				name: 'companyName',
 				type: 'string',
 				default: '',
-				description:
-					'With a first and last name, identifies the contact. Otherwise helps pick the right employment.',
+				displayOptions: { hide: { '/identifyBy': NAME_MODES } },
+				description: employmentHint,
 			},
 			{
-				displayName: 'First Name',
-				name: 'firstName',
-				type: 'string',
-				default: '',
+				displayName: 'Enrich Phone Number',
+				name: 'enrichPhoneNumber',
+				type: 'boolean',
+				default: false,
 				description:
-					'With a last name and a company domain or name, identifies the contact without a LinkedIn URL or email',
+					'Whether to also look up a mobile number. Uses a phone number credit when one is found.',
 			},
 			{
 				displayName: 'HubSpot Contact ID',
@@ -140,13 +155,6 @@ export const contactDescription: INodeProperties[] = [
 				type: 'string',
 				default: '',
 				description: 'Helps tell apart people with the same name at the company',
-			},
-			{
-				displayName: 'Last Name',
-				name: 'lastName',
-				type: 'string',
-				default: '',
-				description: 'With a first name and a company domain or name, identifies the contact',
 			},
 			{
 				displayName: 'Salesforce Contact ID',
@@ -172,8 +180,16 @@ export const contactDescription: INodeProperties[] = [
 				description:
 					'When an earlier attempt returned MULTIPLE_EMPLOYMENTS_FOUND, the companyId of the employment to use',
 			},
+			{
+				displayName: 'Sync to CRM',
+				name: 'syncToCrm',
+				type: 'boolean',
+				default: false,
+				description: 'Whether Goodfit should sync the enriched contact to your connected CRM',
+			},
 		],
 	},
+	optionsCollection(forEnrich, [includeInputFieldsOption, ...waitOptions(ENRICHMENT_WAIT)]),
 	requestIdField({ ...forContact, operation: ['getEnrichmentStatus'] }),
 	requestIdField(
 		forResolve,
@@ -218,8 +234,8 @@ export const contactDescription: INodeProperties[] = [
 		displayOptions: { show: { ...forResolve, resolveBy: ['employment'] } },
 		description: 'The companyId of the employment to use, from the result’s employments',
 	},
-	includeInputFieldsField(forResolve),
-	...waitForCompletionFields(forResolve, ENRICHMENT_WAIT),
+	waitForCompletionField(forResolve, ENRICHMENT_WAIT),
+	optionsCollection(forResolve, [includeInputFieldsOption, ...waitOptions(ENRICHMENT_WAIT)]),
 	...paginationFields({ ...forContact, operation: ['getAll'] }),
 	{
 		displayName: 'Filters',

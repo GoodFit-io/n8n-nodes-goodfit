@@ -20,7 +20,10 @@ const CRITERIA = {
 	combinator: 'and',
 	rules: [{ id: 'r1', field: 'country', operator: 'equalTo', value: 'US' }],
 };
-const waitBriefly = { waitForCompletion: true, timeoutSeconds: 60, pollIntervalSeconds: 5 };
+const waitBriefly = {
+	waitForCompletion: true,
+	options: { timeoutSeconds: 60, pollIntervalSeconds: 5 },
+};
 
 function segment(status: string, overrides: IDataObject = {}) {
 	return {
@@ -240,8 +243,7 @@ describe('Segments API contract', () => {
 				operation: 'preview',
 				criteriaMode: 'json',
 				criteria: JSON.stringify(CRITERIA),
-				sample: 2,
-				additionalFields: { maxCompanies: 100 },
+				additionalFields: { maxCompanies: 100, sample: 2 },
 			},
 			respond: () => ({
 				statusCode: 200,
@@ -261,6 +263,22 @@ describe('Segments API contract', () => {
 		expect(run.output).toEqual([
 			{ sizeCompanies: 100, companies: [{ domain: 'goodfit.io' }, { domain: 'example.com' }] },
 		]);
+	});
+
+	it('Preview asks for a sample of 10 when Sample Size is not set', async () => {
+		const run = await runNode({
+			parameters: {
+				resource: 'segment',
+				operation: 'preview',
+				criteriaMode: 'json',
+				criteria: JSON.stringify(CRITERIA),
+				additionalFields: {},
+			},
+			respond: () => ({ statusCode: 200, body: { sizeCompanies: 0, companies: [] } }),
+		});
+
+		expect(run.violations).toEqual([]);
+		expect(run.requests[0].body).toEqual({ filters: CRITERIA, sample: 10 });
 	});
 
 	it('surfaces a name clash as the API’s conflict error', async () => {

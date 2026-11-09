@@ -46,15 +46,16 @@
 				"operation": "enrich",
 				"identifyBy": "domain",
 				"domain": "={{ $json.Website }}",
-				"skipEmptyDomain": true,
 				"additionalFields": {
 					"salesforceId": "={{ $json.Id }}"
 				},
 				"waitForCompletion": true,
-				"timeoutSeconds": 300,
-				"pollIntervalSeconds": 10,
-				"includeCompanyData": false,
-				"includeInputFields": true
+				"options": {
+					"includeCompanyData": false,
+					"includeInputFields": true,
+					"timeoutSeconds": 300,
+					"pollIntervalSeconds": 10
+				}
 			},
 			"id": "672f7c2d-e259-4155-a04f-63d5546b4fef",
 			"name": "Goodfit: enrich and wait",

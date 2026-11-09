@@ -17,8 +17,8 @@ export function asyncBatchOptions(this: IExecuteFunctions): AsyncBatchOptions {
 		waitForCompletion: this.getNodeParameter('waitForCompletion', 0) as boolean,
 		continueOnFail: this.continueOnFail(),
 		poll: {
-			timeoutMs: (this.getNodeParameter('timeoutSeconds', 0, 300) as number) * 1000,
-			intervalMs: (this.getNodeParameter('pollIntervalSeconds', 0, 5) as number) * 1000,
+			timeoutMs: (this.getNodeParameter('options.timeoutSeconds', 0, 300) as number) * 1000,
+			intervalMs: (this.getNodeParameter('options.pollIntervalSeconds', 0, 5) as number) * 1000,
 		},
 	};
 }

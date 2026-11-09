@@ -48,13 +48,6 @@ export class GoodFitTrigger implements INodeType {
 		],
 		properties: [
 			{
-				displayName:
-					'Copy the production webhook URL above into Goodfit under Settings → Connectors → Webhook, as the companies URL, the contacts URL, or both',
-				name: 'setupNotice',
-				type: 'notice',
-				default: '',
-			},
-			{
 				displayName: 'Events',
 				name: 'events',
 				type: 'multiOptions',
@@ -74,14 +67,6 @@ export class GoodFitTrigger implements INodeType {
 				default: ['account', 'contact'],
 			},
 			{
-				displayName:
-					'Without a signing secret, anyone who knows this URL can start the workflow. Set one on the Goodfit webhook connector and choose Signing Secret below.',
-				name: 'authenticationNotice',
-				type: 'notice',
-				default: '',
-				displayOptions: { show: { authentication: ['none'] } },
-			},
-			{
 				displayName: 'Authentication',
 				name: 'authentication',
 				type: 'options',
@@ -94,6 +79,8 @@ export class GoodFitTrigger implements INodeType {
 					},
 				],
 				default: 'none',
+				description:
+					'Without a signing secret, anyone who knows this URL can start the workflow. Set one on the Goodfit webhook connector and choose Signing Secret.',
 			},
 		],
 	};
